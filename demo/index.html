@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Guidely spotlight demo</title>
+    <title>Guidely demo</title>
     <style>
       body {
         font-family: system-ui, sans-serif;
@@ -31,15 +31,31 @@
         height: 200px;
         overflow: auto;
       }
+      .corner {
+        background: #fde68a;
+        height: 32px;
+        position: fixed;
+        width: 32px;
+      }
+      .dark {
+        --guidely-tooltip-background: #1e293b;
+        --guidely-tooltip-color: #f8fafc;
+        --guidely-tooltip-border-radius: 2px;
+      }
     </style>
   </head>
   <body>
-    <h1>Spotlight demo</h1>
+    <h1>Guidely demo</h1>
     <div class="controls">
       <button data-target="#first">Selector target</button>
       <button id="element-target">Element target</button>
       <button data-target="#nested">Nested scroller</button>
+      <button data-target="#corner-tl">Top-left corner</button>
+      <button data-target="#corner-tr">Top-right corner</button>
+      <button data-target="#corner-bl">Bottom-left corner</button>
+      <button data-target="#corner-br">Bottom-right corner</button>
       <button data-target="#missing">Missing target</button>
+      <button id="theme">Toggle theme</button>
       <button id="destroy">Destroy</button>
       <output id="result"></output>
     </div>
@@ -49,23 +65,36 @@
       <div class="card" id="nested">Card in a nested scroller</div>
     </div>
     <div style="height: 60vh"></div>
+    <div class="corner" id="corner-tl" style="left: 0; top: 0"></div>
+    <div class="corner" id="corner-tr" style="right: 0; top: 0"></div>
+    <div class="corner" id="corner-bl" style="bottom: 0; left: 0"></div>
+    <div class="corner" id="corner-br" style="bottom: 0; right: 0"></div>
 
     <script type="module">
-      import { createSpotlight } from '../dist/index.js';
+      import { createSpotlight, createTooltip } from '../dist/index.js';
 
       const spotlight = createSpotlight();
+      const tooltip = createTooltip();
       const result = document.querySelector('#result');
-      const show = (target) => {
-        result.textContent = `show() returned ${spotlight.show(target)}`;
+      const show = (target, name) => {
+        const shown = spotlight.show(target);
+        tooltip.show(target, {
+          title: name,
+          description: 'Markup stays text: <img src=x onerror="alert(1)">',
+        });
+        result.textContent = `show() returned ${shown}`;
       };
 
       for (const button of document.querySelectorAll('[data-target]')) {
-        button.onclick = () => show(button.dataset.target);
+        button.onclick = () => show(button.dataset.target, button.textContent);
       }
       document.querySelector('#element-target').onclick = () =>
-        show(document.querySelector('#second'));
+        show(document.querySelector('#second'), 'Element target');
+      document.querySelector('#theme').onclick = () =>
+        document.documentElement.classList.toggle('dark');
       document.querySelector('#destroy').onclick = () => {
         spotlight.destroy();
+        tooltip.destroy();
         result.textContent = '';
       };
     </script>

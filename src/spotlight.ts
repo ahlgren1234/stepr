@@ -1,3 +1,5 @@
+import { measure, onViewportChange, resolve } from './dom.js';
+
 export type SpotlightTarget = string | HTMLElement;
 
 export interface SpotlightOptions {
@@ -57,15 +59,7 @@ export function createSpotlight(options: SpotlightOptions = {}): Spotlight {
     });
     document.body.append(overlay);
 
-    listeners = new AbortController();
-    const { signal } = listeners;
-    // Scroll events don't bubble, so capture also catches nested scrollers.
-    window.addEventListener('scroll', update, {
-      capture: true,
-      passive: true,
-      signal,
-    });
-    window.addEventListener('resize', update, { signal });
+    listeners = onViewportChange(update);
   }
 
   function update(): void {
@@ -97,22 +91,6 @@ export function createSpotlight(options: SpotlightOptions = {}): Spotlight {
   }
 
   return { show, update, destroy };
-}
-
-function resolve(target: SpotlightTarget): Element | null {
-  if (typeof target !== 'string') return target;
-  try {
-    return document.querySelector(target);
-  } catch {
-    // An invalid selector is treated like one that matches nothing.
-    return null;
-  }
-}
-
-function measure(element: Element): DOMRect | undefined {
-  if (!element.isConnected) return undefined;
-  const rect = element.getBoundingClientRect();
-  return rect.width > 0 || rect.height > 0 ? rect : undefined;
 }
 
 /** A viewport-sized rectangle with a rounded hole; even-odd fill cuts it out. */

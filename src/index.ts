@@ -6,3 +6,11 @@ export type {
   SpotlightOptions,
   SpotlightTarget,
 } from './spotlight.js';
+
+export { createTooltip } from './tooltip.js';
+export type {
+  Tooltip,
+  TooltipContent,
+  TooltipOptions,
+  TooltipPlacement,
+} from './tooltip.js';
