@@ -53,9 +53,10 @@ export function createTour(options: TourOptions): Tour {
   let controls: Controls | undefined;
   let listeners: AbortController | undefined;
 
-  function findElement(step: TourStep | undefined): Element | undefined {
+  function findElement(step: TourStep | undefined): HTMLElement | undefined {
     const element = step && resolve(step.target);
-    return element && measure(element) ? element : undefined;
+    // A selector can match any Element; the components only use Element APIs.
+    return element && measure(element) ? (element as HTMLElement) : undefined;
   }
 
   /** Indexes of the steps whose targets can currently be shown. */
@@ -84,10 +85,11 @@ export function createTour(options: TourOptions): Tour {
     return { footer, counter, back, next };
   }
 
-  function show(index: number, available: number[]): void {
+  /** Returns `false` if the step's target could not be displayed. */
+  function show(index: number, available: number[]): boolean {
     const step = steps[index];
     const element = findElement(step);
-    if (!step || !element || !controls) return;
+    if (!step || !element || !controls) return false;
     const { footer, counter, back, next } = controls;
 
     const position = available.indexOf(index);
@@ -101,16 +103,19 @@ export function createTour(options: TourOptions): Tour {
       ? (activeElement as HTMLButtonElement)
       : undefined;
 
-    current = { index, element };
     element.scrollIntoView({ block: 'center', inline: 'nearest' });
-    spotlight.show(step.target);
-    tooltip.show(step.target, {
-      title: step.title,
-      description: step.description,
-      footer,
-    });
+    const shown =
+      spotlight.show(element) &&
+      tooltip.show(element, {
+        title: step.title,
+        description: step.description,
+        footer,
+      });
+    if (!shown) return false;
 
+    current = { index, element };
     if (focused) (focused.disabled ? next : focused).focus();
+    return true;
   }
 
   function start(): boolean {
@@ -120,7 +125,10 @@ export function createTour(options: TourOptions): Tour {
     if (first === undefined) return false;
 
     controls = createControls();
-    show(first, available);
+    if (!show(first, available)) {
+      destroy();
+      return false;
+    }
     listeners = onViewportChange(() => {
       if (current && !measure(current.element)) advance(onExit);
     });
@@ -133,7 +141,7 @@ export function createTour(options: TourOptions): Tour {
     const available = availableIndexes();
     const later = available.find((candidate) => candidate > index);
     if (later === undefined) end(onEnd);
-    else show(later, available);
+    else if (!show(later, available)) end(onExit);
   }
 
   function previous(): void {
@@ -141,7 +149,7 @@ export function createTour(options: TourOptions): Tour {
     const { index } = current;
     const available = availableIndexes();
     const earlier = available.filter((candidate) => candidate < index).at(-1);
-    if (earlier !== undefined) show(earlier, available);
+    if (earlier !== undefined && !show(earlier, available)) end(onExit);
   }
 
   function end(callback: (() => void) | undefined): void {

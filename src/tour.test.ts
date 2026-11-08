@@ -237,6 +237,90 @@ describe('missing targets', () => {
   });
 });
 
+describe('target identity', () => {
+  const overlayStyle = () =>
+    document.querySelector<HTMLElement>('[data-guidely-spotlight]')?.style;
+
+  test('displays the element resolved for the step if the selector later matches another', () => {
+    const { element: original } = addTarget('selected');
+    const replacement = document.createElement('div');
+    replacement.id = 'selected';
+    const replacementRect = vi.fn(() => new DOMRect(10, 20, 100, 50));
+    replacement.getBoundingClientRect = replacementRect;
+    original.scrollIntoView = vi.fn(() => {
+      document.body.prepend(replacement);
+    });
+
+    createTour({ steps: [{ target: '#selected', title: 'Selected' }] }).start();
+    window.dispatchEvent(new Event('scroll'));
+
+    // Cutout and tooltip both derive from the original box at (400, 300).
+    expect(overlayStyle()?.clipPath).toContain('M396 292');
+    expect(tooltipNode()?.style.top).toBe('366px');
+    expect(replacementRect).not.toHaveBeenCalled();
+  });
+
+  test('advances without stale nodes when each current target is removed', () => {
+    const position = (id: string, top: number) => {
+      const element = document.querySelector<HTMLElement>(`#${id}`)!;
+      element.getBoundingClientRect = () => new DOMRect(400, top, 100, 50);
+    };
+    position('b', 200);
+    position('c', 100);
+    const { onExit, tour } = threeStepTour();
+    tour.start();
+
+    document.querySelector('#a')?.remove();
+    window.dispatchEvent(new Event('scroll'));
+    expect(document.querySelectorAll('[data-guidely-tooltip]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-guidely-spotlight]')).toHaveLength(
+      1,
+    );
+    expect(overlayStyle()?.clipPath).toContain('M396 192');
+
+    // Now that the components remounted, the tour's listener runs first.
+    document.querySelector('#b')?.remove();
+    window.dispatchEvent(new Event('scroll'));
+    expect(document.querySelectorAll('[data-guidely-tooltip]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-guidely-spotlight]')).toHaveLength(
+      1,
+    );
+    expect(overlayStyle()?.clipPath).toContain('M396 92');
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  test('start() returns false if the target goes away while being displayed', () => {
+    const { element } = addTarget('fleeting');
+    element.scrollIntoView = vi.fn(() => element.remove());
+    const { tour, onComplete, onExit } = threeStepTour({
+      steps: [{ target: element, title: 'Fleeting' }],
+    });
+
+    expect(tour.start()).toBe(false);
+
+    expectNoTourNodes();
+    expect(onComplete).not.toHaveBeenCalled();
+    expect(onExit).not.toHaveBeenCalled();
+    // Nothing is left running, so the same tour can try again.
+    document.body.append(element);
+    element.scrollIntoView = vi.fn();
+    expect(tour.start()).toBe(true);
+  });
+
+  test('next() exits if the target goes away while being displayed', () => {
+    const { tour, onComplete, onExit } = threeStepTour();
+    tour.start();
+    const b = document.querySelector<HTMLElement>('#b')!;
+    b.scrollIntoView = vi.fn(() => b.remove());
+
+    tour.next();
+
+    expect(onExit).toHaveBeenCalledOnce();
+    expect(onComplete).not.toHaveBeenCalled();
+    expectNoTourNodes();
+  });
+});
+
 describe('focus', () => {
   test('stays on the activated button across steps', () => {
     threeStepTour().tour.start();
