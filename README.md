@@ -1,6 +1,25 @@
 # Guidely
 
-Framework-agnostic TypeScript package, currently only the project foundation. "Guidely" is a working name pending final naming clearance.
+Framework-agnostic TypeScript package for highlighting DOM elements. "Guidely" is a working name pending final naming clearance.
+
+## Usage
+
+```ts
+import { createSpotlight } from 'guidely';
+
+const spotlight = createSpotlight({
+  padding: 8,
+  overlayColor: 'rgb(0 0 0 / 50%)',
+});
+
+spotlight.show('#save-button'); // or an HTMLElement; returns false if not found
+spotlight.update(); // reposition after layout changes other than scroll/resize
+spotlight.destroy(); // remove the overlay and all listeners
+```
+
+## Demo
+
+Run `pnpm build && pnpm dlx serve .` and open `/demo/`.
 
 ## Development
 
