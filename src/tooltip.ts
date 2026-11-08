@@ -6,6 +6,8 @@ export type TooltipPlacement = 'top' | 'right' | 'bottom' | 'left';
 export interface TooltipContent {
   title?: string;
   description?: string;
+  /** Element placed below the text as given, for example action buttons. */
+  footer?: HTMLElement;
 }
 
 export interface TooltipOptions {
@@ -19,8 +21,8 @@ export interface TooltipOptions {
 
 export interface Tooltip {
   /**
-   * Shows the content, as plain text, next to the target, replacing any current
-   * tooltip. Returns `false` and removes the tooltip if the target is missing,
+   * Shows the content next to the target, with title and description as plain
+   * text, replacing any current tooltip. Returns `false` and removes the tooltip if the target is missing,
    * detached, or has no size, or if the content is empty.
    */
   show(target: SpotlightTarget, content: TooltipContent): boolean;
@@ -89,7 +91,7 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
     listeners = onViewportChange(update);
   }
 
-  function render({ title, description }: TooltipContent): void {
+  function render({ title, description, footer }: TooltipContent): void {
     const parts: HTMLElement[] = [];
     if (title) {
       const element = document.createElement('div');
@@ -102,6 +104,7 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
       element.textContent = description;
       parts.push(element);
     }
+    if (footer) parts.push(footer);
     tooltip?.replaceChildren(...parts);
   }
 
@@ -115,7 +118,8 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
   function show(next: SpotlightTarget, content: TooltipContent): boolean {
     const element = resolve(next);
     const rect = element && measure(element);
-    if (!element || !rect || (!content.title && !content.description)) {
+    const isEmpty = !content.title && !content.description && !content.footer;
+    if (!element || !rect || isEmpty) {
       destroy();
       return false;
     }

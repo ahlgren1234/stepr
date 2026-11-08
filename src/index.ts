@@ -14,3 +14,6 @@ export type {
   TooltipOptions,
   TooltipPlacement,
 } from './tooltip.js';
+
+export { createTour } from './tour.js';
+export type { Tour, TourOptions, TourStep } from './tour.js';

@@ -47,6 +47,7 @@
   <body>
     <h1>Guidely demo</h1>
     <div class="controls">
+      <button id="tour">Start tour</button>
       <button data-target="#first">Selector target</button>
       <button id="element-target">Element target</button>
       <button data-target="#nested">Nested scroller</button>
@@ -71,12 +72,47 @@
     <div class="corner" id="corner-br" style="bottom: 0; right: 0"></div>
 
     <script type="module">
-      import { createSpotlight, createTooltip } from '../dist/index.js';
+      import {
+        createSpotlight,
+        createTooltip,
+        createTour,
+      } from '../dist/index.js';
 
       const spotlight = createSpotlight();
       const tooltip = createTooltip();
       const result = document.querySelector('#result');
+      const tour = createTour({
+        steps: [
+          {
+            target: '#first',
+            title: 'First card',
+            description: 'Selector target.',
+          },
+          {
+            target: '#missing',
+            title: 'Never shown',
+            description: 'A missing target is skipped.',
+          },
+          {
+            target: document.querySelector('#second'),
+            title: 'Second card',
+            description: 'Element target, scrolled into view.',
+          },
+          {
+            target: '#nested',
+            title: 'Nested card',
+            description: 'Inside a nested scroller.',
+          },
+        ],
+        onComplete: () => (result.textContent = 'onComplete called'),
+        onExit: () => (result.textContent = 'onExit called'),
+      });
+      const clearManual = () => {
+        spotlight.destroy();
+        tooltip.destroy();
+      };
       const show = (target, name) => {
+        tour.destroy();
         const shown = spotlight.show(target);
         tooltip.show(target, {
           title: name,
@@ -90,11 +126,15 @@
       }
       document.querySelector('#element-target').onclick = () =>
         show(document.querySelector('#second'), 'Element target');
+      document.querySelector('#tour').onclick = () => {
+        clearManual();
+        result.textContent = `start() returned ${tour.start()}`;
+      };
       document.querySelector('#theme').onclick = () =>
         document.documentElement.classList.toggle('dark');
       document.querySelector('#destroy').onclick = () => {
-        spotlight.destroy();
-        tooltip.destroy();
+        tour.destroy();
+        clearManual();
         result.textContent = '';
       };
     </script>
