@@ -5,6 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Guidely demo</title>
     <style>
+      /* Makes the reduced-motion handling observable: scrolls are smooth here
+         unless the visitor prefers reduced motion. */
+      html {
+        scroll-behavior: smooth;
+      }
       body {
         font-family: system-ui, sans-serif;
         margin: 0 auto;

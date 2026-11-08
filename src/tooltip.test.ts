@@ -2,7 +2,12 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { createSpotlight } from './spotlight.js';
 import { createTooltip } from './tooltip.js';
-import type { TooltipPlacement } from './tooltip.js';
+import type {
+  Tooltip,
+  TooltipContent,
+  TooltipOptions,
+  TooltipPlacement,
+} from './tooltip.js';
 
 const TOOLTIP_WIDTH = 200;
 const TOOLTIP_HEIGHT = 100;
@@ -94,6 +99,54 @@ describe('content', () => {
       'var(--guidely-tooltip-background',
     );
     expect(tooltips()[0]?.style.color).toContain('var(--guidely-tooltip-color');
+  });
+});
+
+describe('role', () => {
+  const node = () =>
+    document.querySelector<HTMLElement>('[data-guidely-tooltip]');
+  const created: Tooltip[] = [];
+  const show = (options: TooltipOptions, content: TooltipContent) => {
+    const tooltip = createTooltip(options);
+    created.push(tooltip);
+    tooltip.show(addTarget(0, 0).element, content);
+    return tooltip;
+  };
+
+  afterEach(() => {
+    for (const tooltip of created.splice(0)) tooltip.destroy();
+  });
+
+  test('defaults to a tooltip without dialog attributes', () => {
+    show({}, { ...CONTENT, label: 'Label' });
+
+    expect(node()?.getAttribute('role')).toBe('tooltip');
+    expect(node()?.hasAttribute('aria-label')).toBe(false);
+    expect(node()?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  test('a dialog is named by its title, or by a label if given', () => {
+    const tooltip = show({ role: 'dialog' }, CONTENT);
+    expect(node()?.getAttribute('role')).toBe('dialog');
+    expect(node()?.getAttribute('aria-label')).toBe('Title');
+
+    tooltip.show(addTarget(0, 0).element, { ...CONTENT, label: 'Label' });
+    expect(node()?.getAttribute('aria-label')).toBe('Label');
+  });
+
+  test('dialogs have distinct description ids', () => {
+    show({ role: 'dialog' }, CONTENT);
+    show({ role: 'dialog' }, CONTENT);
+
+    const ids = [...tooltips()].map((element) =>
+      element.getAttribute('aria-describedby'),
+    );
+    expect(new Set(ids).size).toBe(2);
+    for (const id of ids) {
+      expect(document.getElementById(id ?? '')?.textContent).toBe(
+        'Description',
+      );
+    }
   });
 });
 

@@ -46,9 +46,31 @@ function threeStepTour(overrides: Partial<TourOptions> = {}) {
   return { tour, onComplete, onExit };
 }
 
+const statusNode = () => document.querySelector('[data-guidely-status]');
+
 function expectNoTourNodes() {
   expect(tooltipNode()).toBeNull();
   expect(overlayNode()).toBeNull();
+  expect(statusNode()).toBeNull();
+}
+
+function addOrigin(id = 'origin') {
+  const element = document.createElement('button');
+  element.id = id;
+  document.body.append(element);
+  element.focus();
+  return element;
+}
+
+function press(key: string, init: KeyboardEventInit = {}) {
+  const event = new KeyboardEvent('keydown', {
+    key,
+    bubbles: true,
+    cancelable: true,
+    ...init,
+  });
+  (document.activeElement ?? document.body).dispatchEvent(event);
+  return event;
 }
 
 beforeEach(() => {
@@ -340,6 +362,323 @@ describe('focus', () => {
     button('Back')?.click();
 
     expect(document.activeElement).toBe(button('Next'));
+  });
+});
+
+describe('focus entry and restoration', () => {
+  test('start() moves focus to Next from the element that started it', () => {
+    addOrigin();
+    threeStepTour().tour.start();
+
+    expect(document.activeElement).toBe(button('Next'));
+  });
+
+  test('start() returning false leaves focus alone', () => {
+    const origin = addOrigin();
+    const { tour } = threeStepTour({ steps: [] });
+
+    expect(tour.start()).toBe(false);
+
+    expect(document.activeElement).toBe(origin);
+  });
+
+  test.each([
+    ['Close', () => button('Close')?.click()],
+    ['Escape', () => press('Escape')],
+    ['destroy()', (tour: Tour) => tour.destroy()],
+  ])('%s restores focus to the origin', (_name, exit) => {
+    const origin = addOrigin();
+    const { tour } = threeStepTour();
+    tour.start();
+
+    exit(tour);
+
+    expect(document.activeElement).toBe(origin);
+  });
+
+  test('completing the tour restores focus', () => {
+    const origin = addOrigin();
+    const { tour } = threeStepTour();
+    tour.start();
+    tour.next();
+    tour.next();
+
+    button('Done')?.click();
+
+    expect(document.activeElement).toBe(origin);
+  });
+
+  test('restores focus when the last target disappears', () => {
+    const origin = addOrigin();
+    const { tour } = threeStepTour();
+    tour.start();
+    tour.next();
+    tour.next();
+
+    document.querySelector('#c')?.remove();
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(document.activeElement).toBe(origin);
+  });
+
+  test('does not take focus back from another page element', () => {
+    addOrigin();
+    const { tour } = threeStepTour();
+    tour.start();
+    const other = addOrigin('other');
+
+    tour.destroy();
+
+    expect(document.activeElement).toBe(other);
+  });
+
+  test('tolerates an origin removed during the tour', () => {
+    const origin = addOrigin();
+    const { tour } = threeStepTour();
+    tour.start();
+    origin.remove();
+
+    tour.destroy();
+
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  test('a callback can move focus after restoration', () => {
+    addOrigin();
+    const destination = document.createElement('button');
+    document.body.append(destination);
+    const { tour } = threeStepTour({ onExit: () => destination.focus() });
+    tour.start();
+
+    press('Escape');
+
+    expect(document.activeElement).toBe(destination);
+  });
+
+  test('keeps focus in the tour when the tooltip removes itself', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+    expect(document.activeElement).toBe(button('Next'));
+
+    // On the first step the tooltip's listener runs before the tour's.
+    document.querySelector('#a')?.remove();
+    window.dispatchEvent(new Event('scroll'));
+
+    expect(text()).toContain('Title B');
+    expect(document.activeElement).toBe(button('Next'));
+  });
+
+  test('does not pull focus from the page when moving between steps', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+    const other = addOrigin('other');
+
+    tour.next();
+
+    expect(document.activeElement).toBe(other);
+  });
+});
+
+describe('keyboard', () => {
+  test('Escape exits once and does not complete', () => {
+    const { tour, onComplete, onExit } = threeStepTour();
+    tour.start();
+
+    const event = press('Escape');
+    press('Escape');
+
+    expect(event.defaultPrevented).toBe(true);
+    expect(onExit).toHaveBeenCalledOnce();
+    expect(onComplete).not.toHaveBeenCalled();
+    expectNoTourNodes();
+  });
+
+  test('Escape works with focus outside the tour', () => {
+    const { tour, onExit } = threeStepTour();
+    tour.start();
+    addOrigin('other');
+
+    press('Escape');
+
+    expect(onExit).toHaveBeenCalledOnce();
+  });
+
+  test('Escape leaves the page alone when no tour is running', () => {
+    const { tour, onExit } = threeStepTour();
+    tour.start();
+    tour.destroy();
+
+    const event = press('Escape');
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  test('Escape claimed by the page does not exit', () => {
+    const { tour, onExit } = threeStepTour();
+    tour.start();
+    const popup = addOrigin('popup');
+    popup.addEventListener('keydown', (event) => event.preventDefault());
+
+    press('Escape');
+
+    expect(onExit).not.toHaveBeenCalled();
+    expect(tooltipNode()).not.toBeNull();
+  });
+
+  test('Escape during text composition does not exit', () => {
+    const { tour, onExit } = threeStepTour();
+    tour.start();
+
+    press('Escape', { isComposing: true });
+
+    expect(onExit).not.toHaveBeenCalled();
+  });
+
+  test('Tab wraps around the enabled controls', () => {
+    threeStepTour().tour.start();
+
+    // Back is disabled on the first step, so Next is the first control.
+    expect(press('Tab', { shiftKey: true }).defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(button('Close'));
+
+    expect(press('Tab').defaultPrevented).toBe(true);
+    expect(document.activeElement).toBe(button('Next'));
+  });
+
+  test('Tab wraps from Back once it is enabled', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+    tour.next();
+    button('Back')?.focus();
+
+    press('Tab', { shiftKey: true });
+
+    expect(document.activeElement).toBe(button('Close'));
+  });
+
+  test('Tab between controls is left to the browser', () => {
+    threeStepTour().tour.start();
+
+    expect(press('Tab').defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(button('Next'));
+  });
+
+  test('Tab outside the tour is left to the browser', () => {
+    threeStepTour().tour.start();
+    const other = addOrigin('other');
+
+    expect(press('Tab').defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(other);
+  });
+});
+
+describe('screen reader semantics', () => {
+  test('the tooltip is a named, described, non-modal dialog', () => {
+    threeStepTour().tour.start();
+    const dialog = tooltipNode();
+
+    expect(dialog?.getAttribute('role')).toBe('dialog');
+    expect(dialog?.getAttribute('aria-label')).toBe('Title A: Step 1 of 3');
+    expect(dialog?.hasAttribute('aria-modal')).toBe(false);
+    const description = document.getElementById(
+      dialog?.getAttribute('aria-describedby') ?? '',
+    );
+    expect(description?.textContent).toBe('Description A');
+  });
+
+  test('a step without a title is named by its position', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+    tour.next();
+    tour.next();
+
+    expect(tooltipNode()?.getAttribute('aria-label')).toBe('Step 3 of 3');
+  });
+
+  test('drops the description reference on a step without one', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+
+    tour.next();
+
+    expect(tooltipNode()?.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  test('announces step changes but not the first step', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+    expect(statusNode()?.getAttribute('role')).toBe('status');
+    expect(statusNode()?.textContent).toBe('');
+
+    tour.next();
+    expect(statusNode()?.textContent).toBe('Title B: Step 2 of 3');
+
+    tour.previous();
+    expect(statusNode()?.textContent).toBe(
+      'Title A: Step 1 of 3. Description A',
+    );
+  });
+
+  test('a restarted tour does not repeat the last announcement', () => {
+    const { tour } = threeStepTour();
+    tour.start();
+    tour.next();
+    tour.destroy();
+
+    tour.start();
+
+    expect(statusNode()?.textContent).toBe('');
+  });
+});
+
+describe('reduced motion', () => {
+  const scrollBehavior = () =>
+    vi.mocked(document.querySelector('#a')!.scrollIntoView).mock.calls[0]?.[0];
+
+  test.each([
+    [true, 'instant'],
+    [false, 'auto'],
+  ])('scrolls when reduce is %s with behavior %s', (matches, behavior) => {
+    vi.spyOn(window, 'matchMedia').mockImplementation(
+      (query) => ({ matches, media: query }) as MediaQueryList,
+    );
+
+    threeStepTour().tour.start();
+
+    expect(window.matchMedia).toHaveBeenCalledWith(
+      '(prefers-reduced-motion: reduce)',
+    );
+    expect(scrollBehavior()).toMatchObject({ behavior });
+  });
+
+  test('restoring focus does not animate a scroll', () => {
+    vi.spyOn(window, 'matchMedia').mockReturnValue({
+      matches: true,
+    } as MediaQueryList);
+    const origin = addOrigin();
+    origin.scrollIntoView = vi.fn();
+    const focus = vi.spyOn(origin, 'focus');
+    const { tour } = threeStepTour();
+    tour.start();
+
+    press('Escape');
+
+    expect(focus).toHaveBeenCalledWith({ preventScroll: true });
+    expect(document.activeElement).toBe(origin);
+    expect(origin.scrollIntoView).toHaveBeenCalledWith({
+      behavior: 'instant',
+      block: 'nearest',
+    });
+  });
+
+  test('works where matchMedia is unavailable', () => {
+    vi.stubGlobal('matchMedia', undefined);
+
+    expect(threeStepTour().tour.start()).toBe(true);
+
+    vi.unstubAllGlobals();
+    expect(scrollBehavior()).toMatchObject({ behavior: 'auto' });
   });
 });
 

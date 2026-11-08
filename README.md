@@ -32,7 +32,7 @@ Each step shows a spotlight and a tooltip with a step counter and Back, Next and
 | `start()` after the tour ended                | Starts again from the first available step                                               |
 | `previous()` on the first step                | No-op; the Back button is disabled                                                       |
 | `next()` on the last step                     | Ends the tour and calls `onComplete`; the Next button reads Done                         |
-| Close button                                  | Ends the tour and calls `onExit`                                                         |
+| Close button or Escape                        | Ends the tour and calls `onExit`                                                         |
 | `destroy()`                                   | Ends the tour without a callback, since the caller already knows                         |
 | `next()`, `previous()`, `destroy()` when idle | No-op                                                                                    |
 | Missing, invalid or hidden target             | Step is skipped and not counted                                                          |
@@ -41,12 +41,19 @@ Each step shows a spotlight and a tooltip with a step counter and Back, Next and
 
 When a step is shown, its target is scrolled towards the center of the viewport, even if it was already visible. This keeps it clear of sticky headers in most layouts and leaves room for the tooltip. Tour tooltips use the theming properties listed under [Tooltip](#tooltip).
 
+#### Accessibility
+
+- **Focus:** `start()` moves focus to the Next button, and focus stays on the activated button between steps. When the tour ends, including through `destroy()`, focus returns to the element that had it before `start()`, unless focus has since moved to another element. `onComplete` and `onExit` run after this, so they can move focus elsewhere.
+- **Keyboard:** Tab and Shift+Tab cycle through the enabled buttons, and Enter or Space activates them. Escape exits from anywhere on the page; a page handler that calls `preventDefault()` on the key, for example to close its own popup, keeps the tour open.
+- **Screen readers:** the tooltip is a non-modal `role="dialog"`, named by the step title and position and described by the step description. Later steps are announced through a visually hidden `role="status"` element.
+- **Motion:** Guidely doesn't animate anything itself. Scrolling to a target follows the page's `scroll-behavior`, except that it is instant when the user prefers reduced motion.
+
 Limitations:
 
 - Button labels and the counter are English only.
 - All steps use the default spotlight and tooltip options.
-- Page content stays clickable during a tour.
-- Keyboard entry, Escape and dialog semantics are not implemented yet; the tooltip still has `role="tooltip"`.
+- Page content stays clickable during a tour, and the dialog doesn't hide it from assistive technology. Tab doesn't reach the page while focus is on the tour's controls.
+- Focus isn't restored into an origin inside a shadow root or iframe.
 
 ### Spotlight
 
@@ -65,7 +72,7 @@ spotlight.destroy(); // remove the overlay and all listeners
 
 ### Tooltip
 
-A tooltip uses the same `show`/`update`/`destroy` shape, so it can be used with a spotlight or on its own. `title` and `description` are always rendered as plain text, never as HTML. An optional `footer` element is placed below them as given.
+A tooltip uses the same `show`/`update`/`destroy` shape, so it can be used with a spotlight or on its own. `title` and `description` are always rendered as plain text, never as HTML. An optional `footer` element is placed below them as given. Pass `role: 'dialog'` to `createTooltip` if the footer has controls; the dialog is then named by `title`, or by `label` in the content if given, and described by `description`.
 
 ```ts
 import { createSpotlight, createTooltip } from 'guidely';
@@ -110,6 +117,19 @@ Limitations:
 ## Demo
 
 Run `pnpm build && pnpm dlx serve .` and open `/demo/`.
+
+### Manual smoke checklist
+
+Run this in one current browser before a release, using only the keyboard from step 1 to 6.
+
+1. Tab to **Start tour** and press Enter. The first step appears and Next has a focus ring.
+2. Press Tab and Shift+Tab repeatedly. Focus cycles through the enabled buttons and doesn't leave the tooltip; Back is skipped on the first step.
+3. Press Enter on Next until the nested card. Each target is highlighted, the tooltip is readable, and focus stays on Next. The last step reads Done.
+4. Press Shift+Tab to Back and press Enter until the first step. When Back becomes disabled, focus moves to Next.
+5. Press Escape. The tour disappears, the page shows `onExit called`, and focus is back on **Start tour**.
+6. Start again and press Enter through to Done. The page shows `onComplete called`, and focus is back on **Start tour**.
+7. Emulate reduced motion (in Chrome DevTools: Rendering > Emulate CSS media feature `prefers-reduced-motion`), reload and start the tour. Moving between steps jumps instantly instead of scrolling smoothly.
+8. With a screen reader (VoiceOver, NVDA or Orca), start the tour. It announces the dialog with the title, step position and description, and each button by name. Pressing Next announces the new step.
 
 ## Development
 
