@@ -535,41 +535,34 @@ describe('keyboard', () => {
     expect(onExit).not.toHaveBeenCalled();
   });
 
-  test('Tab wraps around the enabled controls', () => {
+  test.each([
+    ['Shift+Tab from the first control', 'Next', { shiftKey: true }],
+    ['Tab from the last control', 'Close', {}],
+  ])('%s is left to the browser', (_name, label, init) => {
     threeStepTour().tour.start();
+    button(label)?.focus();
 
-    // Back is disabled on the first step, so Next is the first control.
-    expect(press('Tab', { shiftKey: true }).defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(button('Close'));
-
-    expect(press('Tab').defaultPrevented).toBe(true);
-    expect(document.activeElement).toBe(button('Next'));
+    expect(press('Tab', init).defaultPrevented).toBe(false);
+    expect(document.activeElement).toBe(button(label));
   });
 
-  test('Tab wraps from Back once it is enabled', () => {
-    const { tour } = threeStepTour();
+  test('focus can leave the controls for the target without ending the tour', () => {
+    const { tour, onExit } = threeStepTour();
     tour.start();
+    const target = document.querySelector<HTMLElement>('#a')!;
+    target.tabIndex = 0;
+
+    expect(press('Tab', { shiftKey: true }).defaultPrevented).toBe(false);
+    // Moving focus is the browser's default action, which happy-dom lacks.
+    target.focus();
+
+    expect(tooltipNode()).not.toBeNull();
     tour.next();
-    button('Back')?.focus();
+    expect(document.activeElement).toBe(target);
 
-    press('Tab', { shiftKey: true });
-
-    expect(document.activeElement).toBe(button('Close'));
-  });
-
-  test('Tab between controls is left to the browser', () => {
-    threeStepTour().tour.start();
-
-    expect(press('Tab').defaultPrevented).toBe(false);
-    expect(document.activeElement).toBe(button('Next'));
-  });
-
-  test('Tab outside the tour is left to the browser', () => {
-    threeStepTour().tour.start();
-    const other = addOrigin('other');
-
-    expect(press('Tab').defaultPrevented).toBe(false);
-    expect(document.activeElement).toBe(other);
+    press('Escape');
+    expect(onExit).toHaveBeenCalledOnce();
+    expect(document.activeElement).toBe(target);
   });
 });
 

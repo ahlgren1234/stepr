@@ -44,7 +44,7 @@ When a step is shown, its target is scrolled towards the center of the viewport,
 #### Accessibility
 
 - **Focus:** `start()` moves focus to the Next button, and focus stays on the activated button between steps. When the tour ends, including through `destroy()`, focus returns to the element that had it before `start()`, unless focus has since moved to another element. `onComplete` and `onExit` run after this, so they can move focus elsewhere.
-- **Keyboard:** Tab and Shift+Tab cycle through the enabled buttons, and Enter or Space activates them. Escape exits from anywhere on the page; a page handler that calls `preventDefault()` on the key, for example to close its own popup, keeps the tour open.
+- **Keyboard:** Tab and Shift+Tab follow the normal page order, so focus can leave the tour's buttons and reach page content, including a focusable target. Enter or Space activates the buttons. Escape exits from anywhere on the page; a page handler that calls `preventDefault()` on the key, for example to close its own popup, keeps the tour open.
 - **Screen readers:** the tooltip is a non-modal `role="dialog"`, named by the step title and position and described by the step description. Later steps are announced through a visually hidden `role="status"` element.
 - **Motion:** Guidely doesn't animate anything itself. Scrolling to a target follows the page's `scroll-behavior`, except that it is instant when the user prefers reduced motion.
 
@@ -52,7 +52,8 @@ Limitations:
 
 - Button labels and the counter are English only.
 - All steps use the default spotlight and tooltip options.
-- Page content stays clickable during a tour, and the dialog doesn't hide it from assistive technology. Tab doesn't reach the page while focus is on the tour's controls.
+- Page content stays clickable during a tour, and the dialog doesn't hide it from assistive technology.
+- The tooltip is last in the document, so Shift+Tab leads to the end of the page and Tab past Close leaves the page. Reaching a target from the buttons can take several presses.
 - Focus isn't restored into an origin inside a shadow root or iframe.
 
 ### Spotlight
@@ -123,13 +124,13 @@ Run `pnpm build && pnpm dlx serve .` and open `/demo/`.
 Run this in one current browser before a release, using only the keyboard from step 1 to 6.
 
 1. Tab to **Start tour** and press Enter. The first step appears and Next has a focus ring.
-2. Press Tab and Shift+Tab repeatedly. Focus cycles through the enabled buttons and doesn't leave the tooltip; Back is skipped on the first step.
+2. Press Shift+Tab repeatedly until focus reaches a page button, then Tab back to Next. Focus leaves the tooltip and returns, the tour stays open, and Back is skipped on the first step.
 3. Press Enter on Next until the nested card. Each target is highlighted, the tooltip is readable, and focus stays on Next. The last step reads Done.
 4. Press Shift+Tab to Back and press Enter until the first step. When Back becomes disabled, focus moves to Next.
 5. Press Escape. The tour disappears, the page shows `onExit called`, and focus is back on **Start tour**.
 6. Start again and press Enter through to Done. The page shows `onComplete called`, and focus is back on **Start tour**.
 7. Emulate reduced motion (in Chrome DevTools: Rendering > Emulate CSS media feature `prefers-reduced-motion`), reload and start the tour. Moving between steps jumps instantly instead of scrolling smoothly.
-8. With a screen reader (VoiceOver, NVDA or Orca), start the tour. It announces the dialog with the title, step position and description, and each button by name. Pressing Next announces the new step.
+8. Required before release, and not covered by automated checks: with NVDA, start the tour. It announces the dialog with the title, step position and description, and each button by name. Pressing Next announces the new step.
 
 ## Development
 

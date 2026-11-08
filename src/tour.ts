@@ -44,7 +44,6 @@ interface Controls {
   counter: HTMLElement;
   back: HTMLButtonElement;
   next: HTMLButtonElement;
-  close: HTMLButtonElement;
   /** Announces step changes, since focus stays on the activated button. */
   status: HTMLElement;
 }
@@ -101,7 +100,7 @@ export function createTour(options: TourOptions): Tour {
     });
     document.body.append(status);
 
-    return { footer, counter, back, next, close, status };
+    return { footer, counter, back, next, status };
   }
 
   /** Returns `false` if the step's target could not be displayed. */
@@ -181,25 +180,6 @@ export function createTour(options: TourOptions): Tour {
     if (event.key === 'Escape') {
       event.preventDefault();
       end(onExit);
-    } else if (event.key === 'Tab') {
-      wrapFocus(event);
-    }
-  }
-
-  /**
-   * Keeps Tab on the controls, since the tooltip is last in the document and
-   * focus would otherwise have to pass through the whole page to come back.
-   */
-  function wrapFocus(event: KeyboardEvent): void {
-    if (!controls?.footer.contains(document.activeElement)) return;
-    const { back, next, close } = controls;
-    const enabled = [back, next, close].filter((button) => !button.disabled);
-    const [from, to] = event.shiftKey
-      ? [enabled[0], enabled.at(-1)]
-      : [enabled.at(-1), enabled[0]];
-    if (document.activeElement === from) {
-      event.preventDefault();
-      to?.focus();
     }
   }
 
