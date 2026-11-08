@@ -1,8 +1,54 @@
 # Guidely
 
-Framework-agnostic TypeScript package for highlighting DOM elements and describing them with a tooltip. "Guidely" is a working name pending final naming clearance.
+Framework-agnostic TypeScript package for guided tours: highlight DOM elements, describe them with a tooltip, and step through them. "Guidely" is a working name pending final naming clearance.
 
 ## Usage
+
+### Tour
+
+```ts
+import { createTour } from 'guidely';
+
+const tour = createTour({
+  steps: [
+    { target: '#save', title: 'Save', description: 'Keeps your changes.' },
+    { target: document.querySelector<HTMLElement>('#share')!, title: 'Share' },
+  ],
+  onComplete: () => console.log('finished'),
+  onExit: () => console.log('closed early'),
+});
+
+tour.start(); // returns false if no step has an available target
+tour.next();
+tour.previous();
+tour.destroy();
+```
+
+Each step shows a spotlight and a tooltip with a step counter and Back, Next and Close buttons.
+
+| Situation                                     | Behavior                                                                                 |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `start()` while running                       | No-op; stays on the current step                                                         |
+| `start()` after the tour ended                | Starts again from the first available step                                               |
+| `previous()` on the first step                | No-op; the Back button is disabled                                                       |
+| `next()` on the last step                     | Ends the tour and calls `onComplete`; the Next button reads Done                         |
+| Close button                                  | Ends the tour and calls `onExit`                                                         |
+| `destroy()`                                   | Ends the tour without a callback, since the caller already knows                         |
+| `next()`, `previous()`, `destroy()` when idle | No-op                                                                                    |
+| Missing, invalid or hidden target             | Step is skipped and not counted                                                          |
+| No available step                             | `start()` returns `false` without callbacks                                              |
+| Target disappears while shown                 | Detected on the next scroll or resize: moves to the next step, or calls `onExit` if none |
+
+When a step is shown, its target is scrolled towards the center of the viewport, even if it was already visible. This keeps it clear of sticky headers in most layouts and leaves room for the tooltip. Tour tooltips use the theming properties listed under [Tooltip](#tooltip).
+
+Limitations:
+
+- Button labels and the counter are English only.
+- All steps use the default spotlight and tooltip options.
+- Page content stays clickable during a tour.
+- Keyboard entry, Escape and dialog semantics are not implemented yet; the tooltip still has `role="tooltip"`.
+
+### Spotlight
 
 ```ts
 import { createSpotlight } from 'guidely';
@@ -19,7 +65,7 @@ spotlight.destroy(); // remove the overlay and all listeners
 
 ### Tooltip
 
-A tooltip uses the same `show`/`update`/`destroy` shape, so it can be used with a spotlight or on its own. Content is always rendered as plain text, never as HTML.
+A tooltip uses the same `show`/`update`/`destroy` shape, so it can be used with a spotlight or on its own. `title` and `description` are always rendered as plain text, never as HTML. An optional `footer` element is placed below them as given.
 
 ```ts
 import { createSpotlight, createTooltip } from 'guidely';

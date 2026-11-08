@@ -76,6 +76,16 @@ describe('content', () => {
     expect(node?.textContent).toBe(markup + markup);
   });
 
+  test('renders a footer element below the text', () => {
+    const { element } = addTarget(400, 300);
+    const footer = document.createElement('button');
+
+    expect(createTooltip().show(element, { title: 'Title', footer })).toBe(
+      true,
+    );
+    expect(tooltips()[0]?.lastElementChild).toBe(footer);
+  });
+
   test('exposes CSS custom properties for theming', () => {
     const { element } = addTarget(400, 300);
     createTooltip().show(element, CONTENT);
