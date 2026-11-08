@@ -14,16 +14,17 @@ export interface TourOptions {
   /** Called when the tour moves past its last step. */
   onComplete?: () => void;
   /**
-   * Called when the tour ends early: through the Close button, or because the
-   * current target disappeared with no later step to move to.
+   * Called when the tour ends early: through the Close button or Escape, or
+   * because the current target disappeared with no later step to move to.
    */
   onExit?: () => void;
 }
 
 export interface Tour {
   /**
-   * Shows the first available step; does nothing if already running. Returns
-   * `false` if no step has an available target, otherwise `true`.
+   * Shows the first available step and moves focus to it; does nothing if
+   * already running. Returns `false` if no step has an available target,
+   * otherwise `true`.
    */
   start(): boolean;
   /** Moves to the next available step, or completes the tour after the last. */
@@ -31,8 +32,9 @@ export interface Tour {
   /** Moves to the previous available step; does nothing on the first. */
   previous(): void;
   /**
-   * Removes the tour's DOM nodes and listeners without calling a callback.
-   * `start()` may be called again.
+   * Removes the tour's DOM nodes and listeners without calling a callback, and
+   * returns focus to where it was before `start()` unless it has since moved
+   * to another element. `start()` may be called again.
    */
   destroy(): void;
 }
@@ -42,16 +44,19 @@ interface Controls {
   counter: HTMLElement;
   back: HTMLButtonElement;
   next: HTMLButtonElement;
+  /** Announces step changes, since focus stays on the activated button. */
+  status: HTMLElement;
 }
 
 export function createTour(options: TourOptions): Tour {
   const { steps, onComplete, onExit } = options;
   const spotlight = createSpotlight();
-  const tooltip = createTooltip();
+  const tooltip = createTooltip({ role: 'dialog' });
 
   let current: { index: number; element: Element } | undefined;
   let controls: Controls | undefined;
   let listeners: AbortController | undefined;
+  let origin: HTMLElement | undefined;
 
   function findElement(step: TourStep | undefined): HTMLElement | undefined {
     const element = step && resolve(step.target);
@@ -82,7 +87,20 @@ export function createTour(options: TourOptions): Tour {
     const close = createButton('Close', () => end(onExit));
     footer.append(counter, back, next, close);
 
-    return { footer, counter, back, next };
+    const status = document.createElement('div');
+    status.setAttribute('data-guidely-status', '');
+    status.setAttribute('role', 'status');
+    Object.assign(status.style, {
+      position: 'fixed',
+      width: '1px',
+      height: '1px',
+      overflow: 'hidden',
+      clipPath: 'inset(50%)',
+      whiteSpace: 'nowrap',
+    });
+    document.body.append(status);
+
+    return { footer, counter, back, next, status };
   }
 
   /** Returns `false` if the step's target could not be displayed. */
@@ -90,31 +108,44 @@ export function createTour(options: TourOptions): Tour {
     const step = steps[index];
     const element = findElement(step);
     if (!step || !element || !controls) return false;
-    const { footer, counter, back, next } = controls;
+    const { footer, counter, back, next, status } = controls;
 
     const position = available.indexOf(index);
-    counter.textContent = `Step ${position + 1} of ${available.length}`;
+    const count = `Step ${position + 1} of ${available.length}`;
+    const label = step.title ? `${step.title}: ${count}` : count;
+    counter.textContent = count;
     back.disabled = position === 0;
     next.textContent = position === available.length - 1 ? 'Done' : 'Next';
 
-    // Re-rendering the tooltip reinserts the footer, which drops focus.
+    // Re-rendering the tooltip reinserts the footer, which drops focus. Focus
+    // is also lost if the tooltip removed itself because its target went away.
     const { activeElement } = document;
     const focused = footer.contains(activeElement)
       ? (activeElement as HTMLButtonElement)
       : undefined;
+    const keepFocus = focused ?? isFocusLost();
 
-    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+    element.scrollIntoView({
+      behavior: prefersReducedMotion() ? 'instant' : 'auto',
+      block: 'center',
+      inline: 'nearest',
+    });
     const shown =
       spotlight.show(element) &&
       tooltip.show(element, {
         title: step.title,
         description: step.description,
         footer,
+        label,
       });
     if (!shown) return false;
 
+    // The first step is announced through the dialog when focus enters it.
+    if (current) {
+      status.textContent = [label, step.description].filter(Boolean).join('. ');
+    }
     current = { index, element };
-    if (focused) (focused.disabled ? next : focused).focus();
+    if (keepFocus) (focused && !focused.disabled ? focused : next).focus();
     return true;
   }
 
@@ -124,15 +155,32 @@ export function createTour(options: TourOptions): Tour {
     const first = available[0];
     if (first === undefined) return false;
 
-    controls = createControls();
+    origin = isFocusLost()
+      ? undefined
+      : (document.activeElement as HTMLElement);
+    const created = createControls();
+    controls = created;
     if (!show(first, available)) {
       destroy();
       return false;
     }
+    created.next.focus();
     listeners = onViewportChange(() => {
       if (current && !measure(current.element)) advance(onExit);
     });
+    document.addEventListener('keydown', onKeydown, {
+      signal: listeners.signal,
+    });
     return true;
+  }
+
+  function onKeydown(event: KeyboardEvent): void {
+    // Handlers in the page run first, and can claim the key for themselves.
+    if (event.defaultPrevented || event.isComposing) return;
+    if (event.key === 'Escape') {
+      event.preventDefault();
+      end(onExit);
+    }
   }
 
   function advance(onEnd: (() => void) | undefined): void {
@@ -161,12 +209,38 @@ export function createTour(options: TourOptions): Tour {
     listeners?.abort();
     spotlight.destroy();
     tooltip.destroy();
+    controls?.status.remove();
+    if (origin && isFocusLost()) restoreFocus(origin);
     listeners = undefined;
     controls = undefined;
     current = undefined;
+    origin = undefined;
   }
 
   return { start, next: () => advance(onComplete), previous, destroy };
+}
+
+/** Whether focus is on no particular element, as after removing its element. */
+function isFocusLost(): boolean {
+  const { activeElement, body } = document;
+  return !activeElement || activeElement === body;
+}
+
+function restoreFocus(element: HTMLElement): void {
+  if (!prefersReducedMotion()) {
+    element.focus();
+    return;
+  }
+  // Focusing scrolls with the page's `scroll-behavior`, which may be smooth.
+  element.focus({ preventScroll: true });
+  if (document.activeElement === element) {
+    element.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+  }
+}
+
+function prefersReducedMotion(): boolean {
+  // Optional because some non-browser test environments lack `matchMedia`.
+  return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 }
 
 function createButton(label: string, onClick: () => void): HTMLButtonElement {

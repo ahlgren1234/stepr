@@ -8,6 +8,8 @@ export interface TooltipContent {
   description?: string;
   /** Element placed below the text as given, for example action buttons. */
   footer?: HTMLElement;
+  /** Accessible name when the role is `dialog`. Default: the title. */
+  label?: string;
 }
 
 export interface TooltipOptions {
@@ -17,6 +19,8 @@ export interface TooltipOptions {
   offset?: number;
   /** Default: 10000, above the spotlight overlay. */
   zIndex?: number;
+  /** Use `dialog` when the content has controls. Default: `tooltip`. */
+  role?: 'tooltip' | 'dialog';
 }
 
 export interface Tooltip {
@@ -45,8 +49,16 @@ const FALLBACKS: Record<TooltipPlacement, TooltipPlacement[]> = {
   right: ['left', 'top', 'bottom'],
 };
 
+let tooltipCount = 0;
+
 export function createTooltip(options: TooltipOptions = {}): Tooltip {
-  const { placement = 'bottom', offset = 16, zIndex = 10000 } = options;
+  const {
+    placement = 'bottom',
+    offset = 16,
+    zIndex = 10000,
+    role = 'tooltip',
+  } = options;
+  const descriptionId = `guidely-tooltip-${++tooltipCount}-description`;
 
   let target: Element | undefined;
   let tooltip: HTMLElement | undefined;
@@ -67,7 +79,7 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
   function mount(): void {
     tooltip = document.createElement('div');
     tooltip.setAttribute('data-guidely-tooltip', '');
-    tooltip.setAttribute('role', 'tooltip');
+    tooltip.setAttribute('role', role);
     Object.assign(tooltip.style, {
       position: 'fixed',
       display: 'grid',
@@ -91,7 +103,12 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
     listeners = onViewportChange(update);
   }
 
-  function render({ title, description, footer }: TooltipContent): void {
+  function render(content: TooltipContent): void {
+    const { title, description, footer, label = title } = content;
+    if (role === 'dialog') {
+      setOrRemoveAttribute('aria-label', label);
+      setOrRemoveAttribute('aria-describedby', description && descriptionId);
+    }
     const parts: HTMLElement[] = [];
     if (title) {
       const element = document.createElement('div');
@@ -101,11 +118,17 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
     }
     if (description) {
       const element = document.createElement('div');
+      element.id = descriptionId;
       element.textContent = description;
       parts.push(element);
     }
     if (footer) parts.push(footer);
     tooltip?.replaceChildren(...parts);
+  }
+
+  function setOrRemoveAttribute(name: string, value: string | undefined): void {
+    if (value) tooltip?.setAttribute(name, value);
+    else tooltip?.removeAttribute(name);
   }
 
   function update(): void {
