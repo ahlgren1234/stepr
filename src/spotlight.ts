@@ -48,7 +48,7 @@ export function createSpotlight(options: SpotlightOptions = {}): Spotlight {
 
   function mount(): void {
     overlay = document.createElement('div');
-    overlay.setAttribute('data-guidely-spotlight', '');
+    overlay.setAttribute('data-stepr-spotlight', '');
     overlay.setAttribute('aria-hidden', 'true');
     Object.assign(overlay.style, {
       position: 'fixed',

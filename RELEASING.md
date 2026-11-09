@@ -4,9 +4,9 @@
 
 ## Checklist
 
-1. **Name.** Choose the final name, then run `npm view <name>`; a 404 means it is unclaimed. Also run `npm search <name>` and do a basic trademark search.
+1. **Name.** The package is named `stepr`. Run `npm view stepr`; a 404 means it is still unclaimed. Also run `npm search stepr` and do a basic trademark search.
 
-   As of 2026-11-09 `guidely` is unclaimed, but two publishers use the name for similar products: `@guidelytech/*` (a product-tour and adoption platform) and `@sendsay-ru/guidely*` (a framework-agnostic onboarding library). Decide whether to keep the name or rename. A rename touches `package.json`, the docs, `demo/`, `scripts/verify-package.mjs` and the `--guidely-*` and `data-guidely-*` names in `src/`.
+   As of 2026-11-09 `npm view stepr` returns a 404. Nothing reserves the name until it is published.
 
 2. **Version.** Follow semantic versioning, and start at `0.1.0`. While on `0.x`, breaking changes bump the minor version; features and fixes bump the patch version. Move to `1.0.0` once the API is considered stable. Set the same version in `package.json` and `VERSION` in `src/index.ts`; a unit test checks that they match.
 
@@ -25,7 +25,7 @@
    ```bash
    pnpm pack --pack-destination "$(mktemp -d)" # note the printed path
    cd "$(mktemp -d)" && npm init -y && npm install <path-to-tgz>
-   node --input-type=module -e "import('guidely').then((m) => console.log(m.VERSION, Object.keys(m)))"
+   node --input-type=module -e "import('stepr').then((m) => console.log(m.VERSION, Object.keys(m)))"
    ```
 
 5. **CI and GitGuardian.** Both checks must be green on the release commit on `main`.

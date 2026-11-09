@@ -12,8 +12,8 @@ function createTour(options: TourOptions): Tour {
 }
 
 const tooltipNode = () =>
-  document.querySelector<HTMLElement>('[data-guidely-tooltip]');
-const overlayNode = () => document.querySelector('[data-guidely-spotlight]');
+  document.querySelector<HTMLElement>('[data-stepr-tooltip]');
+const overlayNode = () => document.querySelector('[data-stepr-spotlight]');
 const button = (label: string) =>
   [...(tooltipNode()?.querySelectorAll('button') ?? [])].find(
     (element) => element.textContent === label,
@@ -46,7 +46,7 @@ function threeStepTour(overrides: Partial<TourOptions> = {}) {
   return { tour, onComplete, onExit };
 }
 
-const statusNode = () => document.querySelector('[data-guidely-status]');
+const statusNode = () => document.querySelector('[data-stepr-status]');
 
 function expectNoTourNodes() {
   expect(tooltipNode()).toBeNull();
@@ -261,7 +261,7 @@ describe('missing targets', () => {
 
 describe('target identity', () => {
   const overlayStyle = () =>
-    document.querySelector<HTMLElement>('[data-guidely-spotlight]')?.style;
+    document.querySelector<HTMLElement>('[data-stepr-spotlight]')?.style;
 
   test('displays the element resolved for the step if the selector later matches another', () => {
     const { element: original } = addTarget('selected');
@@ -294,19 +294,15 @@ describe('target identity', () => {
 
     document.querySelector('#a')?.remove();
     window.dispatchEvent(new Event('scroll'));
-    expect(document.querySelectorAll('[data-guidely-tooltip]')).toHaveLength(1);
-    expect(document.querySelectorAll('[data-guidely-spotlight]')).toHaveLength(
-      1,
-    );
+    expect(document.querySelectorAll('[data-stepr-tooltip]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-stepr-spotlight]')).toHaveLength(1);
     expect(overlayStyle()?.clipPath).toContain('M396 192');
 
     // Now that the components remounted, the tour's listener runs first.
     document.querySelector('#b')?.remove();
     window.dispatchEvent(new Event('scroll'));
-    expect(document.querySelectorAll('[data-guidely-tooltip]')).toHaveLength(1);
-    expect(document.querySelectorAll('[data-guidely-spotlight]')).toHaveLength(
-      1,
-    );
+    expect(document.querySelectorAll('[data-stepr-tooltip]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-stepr-spotlight]')).toHaveLength(1);
     expect(overlayStyle()?.clipPath).toContain('M396 92');
     expect(onExit).not.toHaveBeenCalled();
   });
@@ -698,7 +694,7 @@ describe('lifecycle', () => {
     expect(tour.start()).toBe(true);
 
     expect(text()).toContain('Title B');
-    expect(document.querySelectorAll('[data-guidely-tooltip]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-stepr-tooltip]')).toHaveLength(1);
   });
 
   test('destroy() removes everything without calling callbacks', () => {
@@ -758,9 +754,7 @@ describe('lifecycle', () => {
 
     tour.start();
     expect(readsPerScroll()).toBe(baseline);
-    expect(document.querySelectorAll('[data-guidely-tooltip]')).toHaveLength(1);
-    expect(document.querySelectorAll('[data-guidely-spotlight]')).toHaveLength(
-      1,
-    );
+    expect(document.querySelectorAll('[data-stepr-tooltip]')).toHaveLength(1);
+    expect(document.querySelectorAll('[data-stepr-spotlight]')).toHaveLength(1);
   });
 });

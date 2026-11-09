@@ -14,7 +14,7 @@ const TOOLTIP_HEIGHT = 100;
 const CONTENT = { title: 'Title', description: 'Description' };
 
 const tooltips = () =>
-  document.querySelectorAll<HTMLElement>('[data-guidely-tooltip]');
+  document.querySelectorAll<HTMLElement>('[data-stepr-tooltip]');
 
 function setViewport(width: number, height: number): void {
   const root = document.documentElement;
@@ -96,15 +96,15 @@ describe('content', () => {
     createTooltip().show(element, CONTENT);
 
     expect(tooltips()[0]?.style.background).toContain(
-      'var(--guidely-tooltip-background',
+      'var(--stepr-tooltip-background',
     );
-    expect(tooltips()[0]?.style.color).toContain('var(--guidely-tooltip-color');
+    expect(tooltips()[0]?.style.color).toContain('var(--stepr-tooltip-color');
   });
 });
 
 describe('role', () => {
   const node = () =>
-    document.querySelector<HTMLElement>('[data-guidely-tooltip]');
+    document.querySelector<HTMLElement>('[data-stepr-tooltip]');
   const created: Tooltip[] = [];
   const show = (options: TooltipOptions, content: TooltipContent) => {
     const tooltip = createTooltip(options);
@@ -329,7 +329,7 @@ describe('with a spotlight', () => {
     tooltip.show(element, CONTENT);
 
     const overlay = document.querySelector<HTMLElement>(
-      '[data-guidely-spotlight]',
+      '[data-stepr-spotlight]',
     );
     expect(Number(tooltips()[0]?.style.zIndex)).toBeGreaterThan(
       Number(overlay?.style.zIndex),

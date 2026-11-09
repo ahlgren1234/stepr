@@ -88,7 +88,7 @@ export function createTour(options: TourOptions): Tour {
     footer.append(counter, back, next, close);
 
     const status = document.createElement('div');
-    status.setAttribute('data-guidely-status', '');
+    status.setAttribute('data-stepr-status', '');
     status.setAttribute('role', 'status');
     Object.assign(status.style, {
       position: 'fixed',

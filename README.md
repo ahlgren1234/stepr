@@ -1,21 +1,21 @@
-# Guidely
+# Stepr
 
-Lightweight guided product tours for the web. Guidely highlights any element, explains it in a tooltip and walks people through your interface step by step.
+Lightweight guided product tours for the web. Stepr highlights any element, explains it in a tooltip and walks people through your interface step by step.
 
 - **Framework-agnostic:** plain DOM APIs, so it works with any framework or none.
 - **No dependencies:** ESM with TypeScript declarations and no stylesheet to import.
 - **Keyboard and screen reader support** built into tours.
 - **Use the parts you need:** a complete tour, or just the spotlight or tooltip.
 
-> **Pre-release:** Guidely isn't on npm yet, and "Guidely" is a working name pending final naming clearance. Until the first release, [install from a local build](#install-from-a-local-build).
+> **Pre-release:** Stepr isn't on npm yet. Until the first release, [install from a local build](#install-from-a-local-build).
 
 ## Install
 
 ```bash
-npm install guidely
+npm install stepr
 ```
 
-Guidely is an ES module and runs in current browsers. Importing it on a server is safe, but call `start()` and `show()` only in the browser.
+Stepr is an ES module and runs in current browsers. Importing it on a server is safe, but call `start()` and `show()` only in the browser.
 
 ### Install from a local build
 
@@ -23,10 +23,10 @@ Guidely is an ES module and runs in current browsers. Importing it on a server i
 git clone https://github.com/ahlgren1234/guidely.git
 cd guidely
 pnpm install
-pnpm pack # builds and writes guidely-0.0.0.tgz
+pnpm pack # builds and writes stepr-0.0.0.tgz
 
 # In your project:
-npm install /path/to/guidely/guidely-0.0.0.tgz
+npm install /path/to/guidely/stepr-0.0.0.tgz
 ```
 
 ## Quick start
@@ -48,7 +48,7 @@ Add some elements to point at, and a button that starts the tour:
 Create the tour in `main.js`:
 
 ```js
-import { createTour } from 'guidely';
+import { createTour } from 'stepr';
 
 const tour = createTour({
   steps: [
@@ -66,7 +66,7 @@ Serve it with any tool that resolves npm packages, such as `npx vite`. Without a
 
 ```html
 <script type="importmap">
-  { "imports": { "guidely": "/node_modules/guidely/dist/index.js" } }
+  { "imports": { "stepr": "/node_modules/stepr/dist/index.js" } }
 </script>
 ```
 
@@ -81,7 +81,7 @@ The package exports `createTour`, `createSpotlight`, `createTooltip`, the `VERSI
 Each step shows a spotlight and a tooltip with a step counter and Back, Next and Close buttons.
 
 ```ts
-import { createTour } from 'guidely';
+import { createTour } from 'stepr';
 
 const tour = createTour({
   steps: [
@@ -124,7 +124,7 @@ When a step is shown, its target is scrolled towards the center of the viewport,
 Dims the page except for one element. The overlay doesn't block clicks.
 
 ```ts
-import { createSpotlight } from 'guidely';
+import { createSpotlight } from 'stepr';
 
 const spotlight = createSpotlight({
   padding: 8,
@@ -148,7 +148,7 @@ spotlight.destroy(); // remove the overlay and all listeners
 A tooltip uses the same `show`/`update`/`destroy` shape, so it can be used with a spotlight or on its own.
 
 ```ts
-import { createSpotlight, createTooltip } from 'guidely';
+import { createSpotlight, createTooltip } from 'stepr';
 
 const spotlight = createSpotlight();
 const tooltip = createTooltip({ placement: 'bottom', offset: 16 });
@@ -184,24 +184,24 @@ If the tooltip doesn't fit on the preferred side, it flips to the opposite side,
 
 Spotlight and tooltip options are listed above. Theme tooltips, including those in tours, with CSS custom properties on `:root` or any other ancestor:
 
-| Property                          | Default                          |
-| --------------------------------- | -------------------------------- |
-| `--guidely-tooltip-background`    | `#fff`                           |
-| `--guidely-tooltip-color`         | `#111`                           |
-| `--guidely-tooltip-border-radius` | `8px`                            |
-| `--guidely-tooltip-padding`       | `12px`                           |
-| `--guidely-tooltip-max-width`     | `20rem`                          |
-| `--guidely-tooltip-shadow`        | `0 4px 16px rgba(0, 0, 0, 0.25)` |
+| Property                        | Default                          |
+| ------------------------------- | -------------------------------- |
+| `--stepr-tooltip-background`    | `#fff`                           |
+| `--stepr-tooltip-color`         | `#111`                           |
+| `--stepr-tooltip-border-radius` | `8px`                            |
+| `--stepr-tooltip-padding`       | `12px`                           |
+| `--stepr-tooltip-max-width`     | `20rem`                          |
+| `--stepr-tooltip-shadow`        | `0 4px 16px rgba(0, 0, 0, 0.25)` |
 
-The tooltip has a `data-guidely-tooltip` attribute, so you can set these properties there and style the tour's buttons:
+The tooltip has a `data-stepr-tooltip` attribute, so you can set these properties there and style the tour's buttons:
 
 ```css
-[data-guidely-tooltip] {
-  --guidely-tooltip-background: #0f172a;
-  --guidely-tooltip-color: #f8fafc;
+[data-stepr-tooltip] {
+  --stepr-tooltip-background: #0f172a;
+  --stepr-tooltip-color: #f8fafc;
 }
 
-[data-guidely-tooltip] button {
+[data-stepr-tooltip] button {
   border-radius: 6px;
 }
 ```
@@ -220,7 +220,7 @@ A page handler that calls `preventDefault()` on Escape, for example to close its
 
 - **Focus:** `start()` moves focus to the Next button, and focus stays on the activated button between steps. When the tour ends, including through `destroy()`, focus returns to the element that had it before `start()`, unless focus has since moved to another element. `onComplete` and `onExit` run after this, so they can move focus elsewhere.
 - **Screen readers:** the tooltip is a non-modal `role="dialog"`, named by the step title and position and described by the step description. Later steps are announced through a visually hidden `role="status"` element.
-- **Motion:** Guidely doesn't animate anything itself. Scrolling to a target follows the page's `scroll-behavior`, except that it is instant when the user prefers reduced motion.
+- **Motion:** Stepr doesn't animate anything itself. Scrolling to a target follows the page's `scroll-behavior`, except that it is instant when the user prefers reduced motion.
 
 ## Known limitations
 
@@ -228,7 +228,7 @@ Tours:
 
 - Button labels and the counter are English only.
 - All steps use the default spotlight and tooltip options; per-step placement isn't available.
-- A step whose target isn't rendered when it is reached is skipped. Guidely doesn't wait for targets, follow route changes or remember progress.
+- A step whose target isn't rendered when it is reached is skipped. Stepr doesn't wait for targets, follow route changes or remember progress.
 - Tours aren't coordinated, so starting two at once overlaps them.
 - Page content stays clickable during a tour, and the dialog doesn't hide it from assistive technology.
 - The tooltip is last in the document, so Shift+Tab leads to the end of the page and Tab past Close leaves the page. Reaching a target from the buttons can take several presses.

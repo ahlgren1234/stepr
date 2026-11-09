@@ -3,7 +3,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { createSpotlight } from './spotlight.js';
 
 const overlays = () =>
-  document.querySelectorAll<HTMLElement>('[data-guidely-spotlight]');
+  document.querySelectorAll<HTMLElement>('[data-stepr-spotlight]');
 
 /** Adds an element with a stubbed layout box; happy-dom performs no layout. */
 function addTarget(left: number, top: number, width = 100, height = 50) {
