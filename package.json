@@ -1,7 +1,6 @@
 {
   "name": "stepr",
   "version": "0.1.0",
-  "private": true,
   "description": "Lightweight, framework-agnostic guided product tours: spotlight, tooltip and keyboard-accessible steps.",
   "keywords": [
     "product-tour",
@@ -14,7 +13,7 @@
     "typescript",
     "framework-agnostic"
   ],
-  "homepage": "https://github.com/ahlgren1234/stepr#readme",
+  "homepage": "https://ahlgren1234.github.io/stepr/",
   "bugs": "https://github.com/ahlgren1234/stepr/issues",
   "repository": {
     "type": "git",
