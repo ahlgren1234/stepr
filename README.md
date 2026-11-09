@@ -7,20 +7,12 @@ Lightweight guided product tours for the web. Stepr highlights any element, expl
 - **Keyboard and screen reader support** built into tours.
 - **Use the parts you need:** a complete tour, or just the spotlight or tooltip.
 
-> **Pre-release:** Stepr 0.1.0 is being prepared and isn't on npm yet.
+**[Try the live demo](https://ahlgren1234.github.io/stepr/)**
 
 ## Install
 
-Until the first release, install from a local build:
-
 ```bash
-git clone https://github.com/ahlgren1234/stepr.git
-cd stepr
-pnpm install
-pnpm pack # builds and writes stepr-0.1.0.tgz
-
-# In your project:
-npm install /path/to/stepr/stepr-0.1.0.tgz
+npm install stepr
 ```
 
 Stepr is an ES module and runs in current browsers. Importing it on a server is safe, but call `start()` and `show()` only in the browser.
@@ -238,6 +230,8 @@ Tooltip:
 - The tooltip is `position: fixed` on `document.body`, so a `transform` on `body` offsets it.
 
 ## Demo
+
+Try the [live demo](https://ahlgren1234.github.io/stepr/). To run it locally from a clone of this repository:
 
 ```bash
 pnpm install

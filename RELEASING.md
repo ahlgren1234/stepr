@@ -1,6 +1,23 @@
 # Releasing
 
-`"private": true` in `package.json` makes `npm publish` fail. It stays there until the publication approval in step 6.
+Nothing publishes automatically: no workflow runs `npm publish` or holds an npm token. Merging to `main` doesn't publish. Publishing is a manual command that needs the maintainer's explicit approval in step 6.
+
+## v0.1.0 status
+
+Manual results are as reported by the maintainer. Browser, NVDA and Windows versions and test dates weren't recorded.
+
+| Gate                                           | Status                                                                                                 |
+| ---------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Repository public                              | Done                                                                                                   |
+| GitHub Pages deployment                        | Done: [live demo](https://ahlgren1234.github.io/stepr/), deployed from `6a7cdb8` before this candidate |
+| Interactive demo on the live site              | Passed (maintainer-reported)                                                                           |
+| [Manual smoke test](#manual-smoke-test)        | Passed (maintainer-reported)                                                                           |
+| [NVDA test on Windows](#nvda-test-on-windows)  | Passed (maintainer-reported)                                                                           |
+| USPTO and EUIPO trademark searches             | Open                                                                                                   |
+| `npm view stepr` immediately before publishing | Open                                                                                                   |
+| npm login                                      | Open                                                                                                   |
+| Publication approval                           | Open                                                                                                   |
+| Publish, tag and redeploy the demo             | Open                                                                                                   |
 
 ## Checklist
 
@@ -10,7 +27,7 @@ Work through these steps in order.
 
 2. **Version.** Follow semantic versioning. The first release is `0.1.0`. While on `0.x`, breaking changes bump the minor version; features and fixes bump the patch version. Move to `1.0.0` once the API is considered stable. Set the same version in `package.json` and `VERSION` in `src/index.ts`; a unit test checks that they match.
 
-3. **Repository.** Making the repository public needs its own approval. The package metadata, README and demo link to it, and those links fail for visitors while it is private. Public visibility exposes the full Git history, including commit author email addresses and all issues and pull requests.
+3. **Repository.** The repository must stay public, because the package metadata, README and demo link to it.
 
 4. **Build and package.** Run these on the release candidate:
 
@@ -32,12 +49,7 @@ Work through these steps in order.
 
 6. **Publication approval.** The maintainer must explicitly approve the exact package name and version in the release pull request. Green checks are not approval.
 
-7. **Release commit.** After approval, make one pull request that:
-   - removes `"private": true` from `package.json`
-   - removes the pre-release note and the local-build instructions from `README.md`, and adds `npm install stepr` to its Install section (this README ships in the tarball, so it must be correct before publishing)
-   - removes the pre-release pill from `demo/index.html` and changes `Once released:` to `Install:`
-
-   CI and GitGuardian must both be green on the pull request. Merge it.
+7. **Release commit.** CI and GitGuardian must both be green on the release pull request. The README ships in the tarball, so it must be correct before publishing. Merge the pull request only when you are ready to publish straight away, because `main` then tells people to run `npm install stepr`.
 
 8. **Publish.** Publish from a clean checkout of that commit on `main`. Tag only after publishing succeeds, so that a failed publish leaves no tag.
 
@@ -46,7 +58,7 @@ Work through these steps in order.
    pnpm install --frozen-lockfile
    npm login
    npm whoami
-   npm view stepr # must still return a 404
+   npm view stepr # first release only: must still return a 404
    npm publish --dry-run
    npm publish
    git tag v0.1.0 && git push origin v0.1.0
@@ -54,7 +66,7 @@ Work through these steps in order.
 
    npm doesn't allow a published version number to be reused, so a mistake needs a new version.
 
-9. **After publishing.** Install the package from npm in a new project and run the [quick start](README.md#quick-start). If the demo is live, [deploy it again](#deploying-the-demo) so that it shows the install command, which needs its own approval.
+9. **After publishing.** Install the package from npm in a new project and run the [quick start](README.md#quick-start). The live demo shows the version it was last deployed with, so [deploy it again](#deploying-the-demo) to show the install command. That needs its own approval.
 
 ## Deploying the demo
 
@@ -78,8 +90,6 @@ The site is public, whoever can see the repository. On GitHub Free, Pages isn't 
    ```
 
 3. Open the URL and check that the tour, spotlight, tooltip, keyboard controls and theme switcher work, with no errors in the browser console.
-
-4. Only then add the URL to the Demo section of `README.md` and the `homepage` field of `package.json`, in a pull request.
 
 To take the site down, run `gh api -X DELETE repos/ahlgren1234/stepr/pages`.
 
