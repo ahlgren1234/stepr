@@ -14,11 +14,11 @@
     "typescript",
     "framework-agnostic"
   ],
-  "homepage": "https://github.com/ahlgren1234/guidely#readme",
-  "bugs": "https://github.com/ahlgren1234/guidely/issues",
+  "homepage": "https://github.com/ahlgren1234/stepr#readme",
+  "bugs": "https://github.com/ahlgren1234/stepr/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ahlgren1234/guidely.git"
+    "url": "git+https://github.com/ahlgren1234/stepr.git"
   },
   "license": "MIT",
   "author": "Peter Anyawantana",

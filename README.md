@@ -14,13 +14,13 @@ Lightweight guided product tours for the web. Stepr highlights any element, expl
 Until the first release, install from a local build:
 
 ```bash
-git clone https://github.com/ahlgren1234/guidely.git
-cd guidely
+git clone https://github.com/ahlgren1234/stepr.git
+cd stepr
 pnpm install
 pnpm pack # builds and writes stepr-0.1.0.tgz
 
 # In your project:
-npm install /path/to/guidely/stepr-0.1.0.tgz
+npm install /path/to/stepr/stepr-0.1.0.tgz
 ```
 
 Stepr is an ES module and runs in current browsers. Importing it on a server is safe, but call `start()` and `show()` only in the browser.
