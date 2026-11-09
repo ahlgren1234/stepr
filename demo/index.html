@@ -3,78 +3,688 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Guidely demo</title>
+    <title>Guidely: guided product tours for the web</title>
+    <meta
+      name="description"
+      content="Guidely is a lightweight, framework-agnostic TypeScript library for guided product tours."
+    />
+    <meta name="color-scheme" content="light dark" />
     <style>
-      /* Makes the reduced-motion handling observable: scrolls are smooth here
-         unless the visitor prefers reduced motion. */
-      html {
-        scroll-behavior: smooth;
+      :root {
+        --bg: #f7f8f7;
+        --surface: #ffffff;
+        --surface-2: #eef1ef;
+        --ink: #17201c;
+        --muted: #55625c;
+        --line: #d9dfdb;
+        --accent: #0b6b5d;
+        --accent-ink: #ffffff;
+        --accent-soft: #d9efe9;
+        --code-bg: #17201c;
+        --code-ink: #e7efeb;
+
+        --guidely-tooltip-background: var(--surface);
+        --guidely-tooltip-color: var(--ink);
+        --guidely-tooltip-border-radius: 10px;
+        --guidely-tooltip-padding: 14px;
+        --guidely-tooltip-shadow:
+          0 0 0 1px var(--line), 0 12px 32px rgb(0 0 0 / 28%);
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg: #111614;
+          --surface: #1a211e;
+          --surface-2: #232c28;
+          --ink: #edf2ef;
+          --muted: #a4b1ab;
+          --line: #34403a;
+          --accent: #5fd0bc;
+          --accent-ink: #08241e;
+          --accent-soft: #173a33;
+          --code-bg: #0a0e0c;
+          --code-ink: #e7efeb;
+        }
+      }
+      @media (prefers-reduced-motion: no-preference) {
+        html {
+          scroll-behavior: smooth;
+        }
+      }
+      * {
+        box-sizing: border-box;
       }
       body {
-        font-family: system-ui, sans-serif;
-        margin: 0 auto;
-        max-width: 40rem;
-        padding: 1rem;
+        background: var(--bg);
+        color: var(--ink);
+        font:
+          1rem/1.6 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        margin: 0;
       }
-      .controls {
-        background: white;
+      a {
+        color: var(--accent);
+      }
+      h1,
+      h2,
+      h3 {
+        letter-spacing: -0.02em;
+        line-height: 1.15;
+        margin: 0;
+      }
+      p {
+        margin: 0;
+      }
+      code,
+      pre,
+      kbd {
+        font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      }
+      :focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
+      .wrap {
+        margin: 0 auto;
+        max-width: 70rem;
+        padding: 0 1rem;
+      }
+
+      /* Header */
+      .site-header {
+        background: var(--bg);
+        border-bottom: 1px solid var(--line);
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+      .site-header .wrap {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem 1.5rem;
+        justify-content: space-between;
+        padding-bottom: 0.625rem;
+        padding-top: 0.625rem;
+      }
+      .brand {
+        color: var(--ink);
+        font-size: 1.125rem;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        text-decoration: none;
+      }
+      .site-header nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.125rem 1rem;
+      }
+      .site-header nav a {
+        color: var(--muted);
+        font-size: 0.875rem;
+        text-decoration: none;
+      }
+      .site-header nav a:hover {
+        color: var(--ink);
+      }
+
+      /* Buttons */
+      button {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--ink);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.9375rem;
+        font-weight: 500;
+        padding: 0.5rem 0.875rem;
+      }
+      button:hover {
+        background: var(--surface-2);
+      }
+      button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+      }
+      button.primary:hover {
+        filter: brightness(1.1);
+      }
+      button[aria-pressed='true'] {
+        background: var(--accent-soft);
+        border-color: var(--accent);
+      }
+      .actions {
         display: flex;
         flex-wrap: wrap;
         gap: 0.5rem;
-        padding: 0.5rem 0;
-        position: sticky;
-        top: 0;
       }
-      .card {
-        background: #dbeafe;
-        border-radius: 8px;
-        margin: 60vh 0;
+
+      /* Tooltip buttons, as a site using Guidely might style them. */
+      [data-guidely-tooltip] {
+        font-size: 0.9375rem;
+        line-height: 1.45;
+      }
+      [data-guidely-tooltip] button {
+        background: transparent;
+        border-color: color-mix(in srgb, currentColor 40%, transparent);
+        border-radius: 6px;
+        color: inherit;
+        font-size: 0.875rem;
+        padding: 0.25rem 0.625rem;
+      }
+      [data-guidely-tooltip] button:nth-last-child(2) {
+        background: var(--guidely-tooltip-color);
+        border-color: var(--guidely-tooltip-color);
+        color: var(--guidely-tooltip-background);
+      }
+      [data-guidely-tooltip] button:disabled {
+        cursor: default;
+        opacity: 0.45;
+      }
+      [data-guidely-tooltip] button:focus-visible {
+        outline-color: currentColor;
+      }
+      [data-guidely-tooltip] button:nth-last-child(2):focus-visible {
+        outline-color: var(--guidely-tooltip-color);
+      }
+      [data-guidely-tooltip] span {
+        font-size: 0.8125rem;
+      }
+
+      /* Hero */
+      .hero {
+        align-items: center;
+        display: grid;
+        gap: 2.5rem;
+        padding-bottom: 4rem;
+        padding-top: 4rem;
+      }
+      .pill {
+        background: var(--accent-soft);
+        border-radius: 999px;
+        display: inline-block;
+        font-size: 0.8125rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        padding: 0.125rem 0.75rem;
+      }
+      .hero h1 {
+        font-size: clamp(2.25rem, 6vw, 3.5rem);
+      }
+      .hero .lede {
+        color: var(--muted);
+        font-size: 1.125rem;
+        margin: 1.25rem 0 1.5rem;
+        max-width: 34rem;
+      }
+      .install {
+        color: var(--muted);
+        font-size: 0.9375rem;
+        margin-top: 1.25rem;
+      }
+
+      /* Sample app the tour points at */
+      .app {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        box-shadow: 0 16px 48px rgb(0 0 0 / 8%);
+        min-width: 0;
         padding: 1rem;
       }
-      .scroller {
-        border: 1px solid #94a3b8;
-        height: 200px;
-        overflow: auto;
+      .app-bar {
+        align-items: center;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
       }
-      .corner {
-        background: #fde68a;
-        height: 32px;
-        position: fixed;
-        width: 32px;
+      .app-bar strong {
+        margin-right: auto;
       }
-      .dark {
-        --guidely-tooltip-background: #1e293b;
-        --guidely-tooltip-color: #f8fafc;
-        --guidely-tooltip-border-radius: 2px;
+      .app-chip {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        font-size: 0.875rem;
+        padding: 0.25rem 0.625rem;
+      }
+      .app-chip.solid {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: var(--accent-ink);
+        font-weight: 600;
+      }
+      .app-chip.field {
+        color: var(--muted);
+        min-width: 7rem;
+      }
+      .app-stats {
+        display: grid;
+        gap: 0.5rem;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        margin-bottom: 1rem;
+      }
+      .app-stats div {
+        background: var(--surface-2);
+        border-radius: 8px;
+        padding: 0.5rem 0.75rem;
+      }
+      .app-stats b {
+        display: block;
+        font-size: 1.25rem;
+      }
+      .app-stats span {
+        color: var(--muted);
+        font-size: 0.8125rem;
+      }
+      .app-rows div {
+        border-top: 1px solid var(--line);
+        display: flex;
+        font-size: 0.875rem;
+        gap: 0.75rem;
+        justify-content: space-between;
+        padding: 0.5rem 0.25rem;
+      }
+      .app-rows span:last-child {
+        color: var(--muted);
+      }
+
+      /* Demo sections */
+      .section {
+        border-top: 1px solid var(--line);
+        padding-bottom: 3.5rem;
+        padding-top: 3.5rem;
+        scroll-margin-top: 3.5rem;
+      }
+      .section h2 {
+        font-size: 1.75rem;
+        margin-bottom: 0.75rem;
+      }
+      .demo {
+        display: grid;
+        gap: 2rem;
+      }
+      .demo > * {
+        min-width: 0;
+      }
+      .copy > p {
+        color: var(--muted);
+        margin-bottom: 1.25rem;
+        max-width: 32rem;
+      }
+      .stage {
+        align-items: center;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        margin-bottom: 1rem;
+        min-height: 12rem;
+        padding: 1.5rem;
+      }
+      .target {
+        background: var(--accent-soft);
+        border-radius: 8px;
+        font-size: 0.9375rem;
+        font-weight: 600;
+        padding: 0.75rem 1.25rem;
+      }
+      pre {
+        background: var(--code-bg);
+        border-radius: 12px;
+        color: var(--code-ink);
+        font-size: 0.8125rem;
+        line-height: 1.6;
+        margin: 0;
+        overflow-x: auto;
+        padding: 1rem 1.125rem;
+      }
+      /* Scrollable code must be reachable by keyboard. */
+      pre:focus-visible {
+        outline-offset: 2px;
+      }
+      output {
+        color: var(--muted);
+        display: block;
+        font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+        font-size: 0.8125rem;
+        margin-top: 0.75rem;
+        min-height: 1.3rem;
+      }
+
+      /* Keyboard */
+      .keys {
+        border-collapse: collapse;
+        margin-bottom: 1.25rem;
+        width: 100%;
+      }
+      .keys th,
+      .keys td {
+        border-top: 1px solid var(--line);
+        font-size: 0.9375rem;
+        font-weight: 400;
+        padding: 0.5rem 0.75rem 0.5rem 0;
+        text-align: left;
+        vertical-align: top;
+      }
+      .keys thead th {
+        border-top: 0;
+        color: var(--muted);
+        font-size: 0.8125rem;
+      }
+      kbd {
+        background: var(--surface-2);
+        border: 1px solid var(--line);
+        border-radius: 5px;
+        font-size: 0.8125rem;
+        padding: 0.0625rem 0.375rem;
+        white-space: nowrap;
+      }
+
+      /* Customization form */
+      .fields {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-bottom: 1.25rem;
+        max-width: 32rem;
+      }
+      .fields label {
+        display: grid;
+        font-size: 0.875rem;
+        font-weight: 500;
+        gap: 0.25rem;
+      }
+      .fields select {
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        color: var(--ink);
+        font: inherit;
+        padding: 0.375rem 0.5rem;
+      }
+      .fields input {
+        accent-color: var(--accent);
+        margin: 0.5rem 0 0;
+        width: 100%;
+      }
+
+      /* Footer */
+      .site-footer {
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 0.875rem;
+        padding: 2rem 0 3rem;
+      }
+
+      @media (min-width: 56rem) {
+        .hero,
+        .demo {
+          grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+        }
       }
     </style>
   </head>
   <body>
-    <h1>Guidely demo</h1>
-    <div class="controls">
-      <button id="tour">Start tour</button>
-      <button data-target="#first">Selector target</button>
-      <button id="element-target">Element target</button>
-      <button data-target="#nested">Nested scroller</button>
-      <button data-target="#corner-tl">Top-left corner</button>
-      <button data-target="#corner-tr">Top-right corner</button>
-      <button data-target="#corner-bl">Bottom-left corner</button>
-      <button data-target="#corner-br">Bottom-right corner</button>
-      <button data-target="#missing">Missing target</button>
-      <button id="theme">Toggle theme</button>
-      <button id="destroy">Destroy</button>
-      <output id="result"></output>
-    </div>
-    <div class="card" id="first">First card</div>
-    <div class="card" id="second">Second card</div>
-    <div class="scroller">
-      <div class="card" id="nested">Card in a nested scroller</div>
-    </div>
-    <div style="height: 60vh"></div>
-    <div class="corner" id="corner-tl" style="left: 0; top: 0"></div>
-    <div class="corner" id="corner-tr" style="right: 0; top: 0"></div>
-    <div class="corner" id="corner-bl" style="bottom: 0; left: 0"></div>
-    <div class="corner" id="corner-br" style="bottom: 0; right: 0"></div>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="brand" href="#top">Guidely</a>
+        <nav aria-label="Sections">
+          <a href="#spotlight">Spotlight</a>
+          <a href="#tooltip">Tooltip</a>
+          <a href="#tour">Tour</a>
+          <a href="#keyboard">Keyboard</a>
+          <a href="#customize">Customize</a>
+          <a href="https://github.com/ahlgren1234/guidely#readme">Docs</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="top">
+      <div class="wrap hero">
+        <div>
+          <span class="pill">Pre-release: not on npm yet</span>
+          <h1>Guided product tours, without the framework.</h1>
+          <p class="lede">
+            Guidely highlights any element, explains it in a tooltip and walks
+            people through your interface. It is written in TypeScript, has no
+            dependencies and works with keyboards and screen readers.
+          </p>
+          <div class="actions">
+            <button class="primary" data-start-tour>Start the tour</button>
+          </div>
+          <p class="install">Once released: <code>npm install guidely</code></p>
+        </div>
+
+        <div
+          class="app"
+          role="img"
+          aria-label="A sample invoicing app that the tour points at"
+        >
+          <div class="app-bar">
+            <strong>Invoices</strong>
+            <span class="app-chip field" id="app-search">Search…</span>
+            <span class="app-chip solid" id="app-new">New invoice</span>
+          </div>
+          <div class="app-stats" id="app-stats">
+            <div><b>12</b><span>Open</span></div>
+            <div><b>3</b><span>Overdue</span></div>
+            <div><b>28</b><span>Paid</span></div>
+          </div>
+          <div class="app-rows" id="app-rows">
+            <div><span>Harbor Studio</span><span>Due Friday</span></div>
+            <div><span>Larkspur Bakery</span><span>Overdue</span></div>
+            <div><span>Oak &amp; Iron</span><span>Paid</span></div>
+          </div>
+        </div>
+      </div>
+
+      <section class="section" id="spotlight">
+        <div class="wrap demo">
+          <div class="copy">
+            <h2>Spotlight</h2>
+            <p>
+              Dims the page except for one element. The cutout follows the
+              target through scrolling and resizing, and the overlay never
+              blocks clicks.
+            </p>
+            <div class="actions">
+              <button data-spotlight="#spot-a">Highlight Reports</button>
+              <button data-spotlight="#spot-b">Highlight Billing</button>
+              <button data-spotlight="#spot-missing">Missing target</button>
+              <button data-clear>Clear</button>
+            </div>
+            <output id="spotlight-result"></output>
+          </div>
+          <div>
+            <div class="stage">
+              <div class="target" id="spot-a">Reports</div>
+              <div class="target" id="spot-b">Billing</div>
+            </div>
+            <pre tabindex="0"><code>const spotlight = createSpotlight();
+
+spotlight.show('#reports'); // false if there's no such element
+spotlight.destroy();</code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="tooltip">
+        <div class="wrap demo">
+          <div class="copy">
+            <h2>Tooltip</h2>
+            <p>
+              Places text next to an element. The placement is a preference: if
+              there isn't room, the tooltip flips or shifts to stay in the
+              viewport. Content is always rendered as plain text.
+            </p>
+            <div class="actions" role="group" aria-label="Tooltip placement">
+              <button data-placement="top">Top</button>
+              <button data-placement="right">Right</button>
+              <button data-placement="bottom">Bottom</button>
+              <button data-placement="left">Left</button>
+              <button data-clear>Clear</button>
+            </div>
+            <output id="tooltip-result"></output>
+          </div>
+          <div>
+            <div class="stage">
+              <div class="target" id="tip-target">Export</div>
+            </div>
+            <pre tabindex="0"><code id="tooltip-code"></code></pre>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="tour">
+        <div class="wrap demo">
+          <div class="copy">
+            <h2>Multi-step tour</h2>
+            <p>
+              Combines both into a sequence with Back, Next and Close buttons
+              and a step counter. Steps whose targets aren't on the page are
+              skipped. This tour walks through the sample app at the top of the
+              page, then returns you here.
+            </p>
+            <div class="actions">
+              <button class="primary" data-start-tour>Start the tour</button>
+            </div>
+            <output id="tour-result"></output>
+          </div>
+          <pre tabindex="0"><code>const tour = createTour({
+  steps: [
+    {
+      target: '#app-new',
+      title: 'Create an invoice',
+      description: 'Start here when you have work to bill.',
+    },
+    {
+      target: '#app-search',
+      title: 'Find anything',
+      description: 'Search by customer, amount or date.',
+    },
+    // ...
+  ],
+  onComplete: () =&gt; log('onComplete called'),
+  onExit: () =&gt; log('onExit called'),
+});
+
+tour.start();</code></pre>
+        </div>
+      </section>
+
+      <section class="section" id="keyboard">
+        <div class="wrap demo">
+          <div class="copy">
+            <h2>Keyboard and Escape</h2>
+            <p>
+              Tours work without a mouse. Focus moves to the Next button when a
+              tour starts and returns to where it was when the tour ends. Try
+              it: focus the button below with Tab, press Enter, then press
+              Escape.
+            </p>
+            <div class="actions">
+              <button data-start-tour>Start with the keyboard</button>
+            </div>
+            <output id="keyboard-result"></output>
+          </div>
+          <table class="keys">
+            <thead>
+              <tr>
+                <th scope="col">Key</th>
+                <th scope="col">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row"><kbd>Enter</kbd> or <kbd>Space</kbd></th>
+                <td>Activates the focused Back, Next or Close button</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>Tab</kbd> and <kbd>Shift+Tab</kbd></th>
+                <td>Follow the normal page order, including page content</td>
+              </tr>
+              <tr>
+                <th scope="row"><kbd>Escape</kbd></th>
+                <td>Exits the tour from anywhere on the page</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section" id="customize">
+        <div class="wrap demo">
+          <div class="copy">
+            <h2>Customization</h2>
+            <p>
+              Spotlights and tooltips take options, and CSS custom properties
+              theme every tooltip. Tours use the theme but keep the default
+              spotlight and placement.
+            </p>
+            <div class="fields">
+              <label>
+                Theme
+                <select id="theme">
+                  <option value="site">Site</option>
+                  <option value="midnight">Midnight</option>
+                  <option value="paper">Paper</option>
+                </select>
+              </label>
+              <label>
+                Placement
+                <select id="placement">
+                  <option>top</option>
+                  <option>right</option>
+                  <option selected>bottom</option>
+                  <option>left</option>
+                </select>
+              </label>
+              <label>
+                Spotlight padding
+                <input id="padding" type="range" min="0" max="24" value="8" />
+              </label>
+              <label>
+                Overlay opacity
+                <input
+                  id="opacity"
+                  type="range"
+                  min="20"
+                  max="80"
+                  step="5"
+                  value="50"
+                />
+              </label>
+            </div>
+            <div class="actions">
+              <button id="preview">Preview</button>
+              <button data-start-tour>Start themed tour</button>
+              <button data-clear>Clear</button>
+            </div>
+          </div>
+          <div>
+            <div class="stage">
+              <div class="target" id="custom-target">Settings</div>
+            </div>
+            <pre tabindex="0"><code id="custom-code"></code></pre>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        MIT licensed.
+        <a href="https://github.com/ahlgren1234/guidely">Source on GitHub</a>.
+      </div>
+    </footer>
 
     <script type="module">
       import {
@@ -83,65 +693,179 @@
         createTour,
       } from '../dist/index.js';
 
-      const spotlight = createSpotlight();
-      const tooltip = createTooltip();
-      const result = document.querySelector('#result');
+      const $ = (selector) => document.querySelector(selector);
+      const $$ = (selector) => document.querySelectorAll(selector);
+
+      const THEMES = {
+        site: {},
+        midnight: {
+          '--guidely-tooltip-background': '#0f172a',
+          '--guidely-tooltip-color': '#f8fafc',
+          '--guidely-tooltip-border-radius': '16px',
+          '--guidely-tooltip-padding': '18px',
+          '--guidely-tooltip-shadow': '0 16px 40px rgb(0 0 0 / 45%)',
+        },
+        paper: {
+          '--guidely-tooltip-background': '#fffbeb',
+          '--guidely-tooltip-color': '#422006',
+          '--guidely-tooltip-border-radius': '2px',
+          '--guidely-tooltip-padding': '12px',
+          '--guidely-tooltip-shadow': '0 0 0 2px #422006',
+        },
+      };
+
+      // Standalone demos. Showing one replaces whichever is on screen.
+      let active = [];
+      let previewing = false;
+      const clear = () => {
+        for (const part of active) part.destroy();
+        active = [];
+        previewing = false;
+        for (const button of $$('[data-placement]')) {
+          button.removeAttribute('aria-pressed');
+        }
+      };
+      const use = (...parts) => {
+        clear();
+        tour.destroy();
+        active = parts;
+      };
+
+      // Tour, shared by every "start" button.
+      const report = (message) => {
+        $('#tour-result').textContent = message;
+        $('#keyboard-result').textContent = message;
+      };
+      const describeFocus = () => {
+        const { activeElement, body } = document;
+        return activeElement && activeElement !== body
+          ? `focus is on "${activeElement.textContent.trim()}"`
+          : 'focus is on the page';
+      };
       const tour = createTour({
         steps: [
           {
-            target: '#first',
-            title: 'First card',
-            description: 'Selector target.',
+            target: '#app-new',
+            title: 'Create an invoice',
+            description: 'Start here when you have work to bill.',
           },
           {
-            target: '#missing',
-            title: 'Never shown',
-            description: 'A missing target is skipped.',
+            target: '#app-search',
+            title: 'Find anything',
+            description: 'Search by customer, amount or date.',
           },
           {
-            target: document.querySelector('#second'),
-            title: 'Second card',
-            description: 'Element target, scrolled into view.',
+            target: '#app-stats',
+            title: 'See where things stand',
+            description: 'Open, overdue and paid invoices at a glance.',
           },
           {
-            target: '#nested',
-            title: 'Nested card',
-            description: 'Inside a nested scroller.',
+            target: '#app-rows',
+            title: 'Follow up',
+            description: 'Each customer shows what happens next.',
           },
         ],
-        onComplete: () => (result.textContent = 'onComplete called'),
-        onExit: () => (result.textContent = 'onExit called'),
+        onComplete: () => report(`onComplete called; ${describeFocus()}`),
+        onExit: () => report(`onExit called; ${describeFocus()}`),
       });
-      const clearManual = () => {
-        spotlight.destroy();
-        tooltip.destroy();
-      };
-      const show = (target, name) => {
-        tour.destroy();
-        const shown = spotlight.show(target);
-        tooltip.show(target, {
-          title: name,
-          description: 'Markup stays text: <img src=x onerror="alert(1)">',
+      for (const button of $$('[data-start-tour]')) {
+        button.addEventListener('click', () => {
+          clear();
+          report(`start() returned ${tour.start()}`);
         });
-        result.textContent = `show() returned ${shown}`;
-      };
-
-      for (const button of document.querySelectorAll('[data-target]')) {
-        button.onclick = () => show(button.dataset.target, button.textContent);
       }
-      document.querySelector('#element-target').onclick = () =>
-        show(document.querySelector('#second'), 'Element target');
-      document.querySelector('#tour').onclick = () => {
-        clearManual();
-        result.textContent = `start() returned ${tour.start()}`;
+
+      // Spotlight
+      for (const button of $$('[data-spotlight]')) {
+        button.addEventListener('click', () => {
+          const spotlight = createSpotlight();
+          use(spotlight);
+          const shown = spotlight.show(button.dataset.spotlight);
+          $('#spotlight-result').textContent =
+            `show('${button.dataset.spotlight}') returned ${shown}`;
+        });
+      }
+
+      // Tooltip
+      const showTooltipCode = (placement) => {
+        $('#tooltip-code').textContent =
+          `const tooltip = createTooltip({ placement: '${placement}' });\n\n` +
+          `tooltip.show('#export', {\n` +
+          `  title: 'Export',\n` +
+          `  description: 'Download this view as a CSV file.',\n` +
+          `});`;
       };
-      document.querySelector('#theme').onclick = () =>
-        document.documentElement.classList.toggle('dark');
-      document.querySelector('#destroy').onclick = () => {
-        tour.destroy();
-        clearManual();
-        result.textContent = '';
+      showTooltipCode('bottom');
+      for (const button of $$('[data-placement]')) {
+        button.addEventListener('click', () => {
+          const { placement } = button.dataset;
+          const tooltip = createTooltip({ placement });
+          use(tooltip);
+          const shown = tooltip.show('#tip-target', {
+            title: 'Export',
+            description: 'Download this view as a CSV file.',
+          });
+          for (const other of $$('[data-placement]')) {
+            other.setAttribute('aria-pressed', String(other === button));
+          }
+          showTooltipCode(placement);
+          $('#tooltip-result').textContent =
+            `Preferred side: ${placement}; show() returned ${shown}`;
+        });
+      }
+
+      // Customization
+      const overlayColor = () => `rgb(0 0 0 / ${$('#opacity').value}%)`;
+      const renderCustomization = () => {
+        const theme = THEMES[$('#theme').value];
+        for (const name of Object.keys(THEMES.midnight)) {
+          if (theme[name]) {
+            document.documentElement.style.setProperty(name, theme[name]);
+          } else {
+            document.documentElement.style.removeProperty(name);
+          }
+        }
+
+        const css = Object.entries(theme)
+          .map(([name, value]) => `  ${name}: ${value};`)
+          .join('\n');
+        $('#custom-code').textContent =
+          `createSpotlight({\n` +
+          `  padding: ${$('#padding').value},\n` +
+          `  overlayColor: '${overlayColor()}',\n` +
+          `});\n` +
+          `createTooltip({ placement: '${$('#placement').value}' });` +
+          (css ? `\n\n/* CSS */\n:root {\n${css}\n}` : '');
+
+        if (previewing) showPreview();
       };
+      const showPreview = () => {
+        const spotlight = createSpotlight({
+          padding: Number($('#padding').value),
+          overlayColor: overlayColor(),
+        });
+        const tooltip = createTooltip({ placement: $('#placement').value });
+        use(spotlight, tooltip);
+        spotlight.show('#custom-target');
+        tooltip.show('#custom-target', {
+          title: 'Settings',
+          description: 'Change the controls to update this preview.',
+        });
+        previewing = true;
+      };
+      for (const control of $$('#theme, #placement, #padding, #opacity')) {
+        control.addEventListener('input', renderCustomization);
+      }
+      $('#preview').addEventListener('click', showPreview);
+      renderCustomization();
+
+      // Clearing
+      for (const button of $$('[data-clear]')) {
+        button.addEventListener('click', clear);
+      }
+      document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') clear();
+      });
     </script>
   </body>
 </html>

@@ -2,10 +2,29 @@
   "name": "guidely",
   "version": "0.0.0",
   "private": true,
-  "description": "Framework-agnostic TypeScript package (working name).",
+  "description": "Lightweight, framework-agnostic guided product tours: spotlight, tooltip and keyboard-accessible steps.",
+  "keywords": [
+    "product-tour",
+    "guided-tour",
+    "onboarding",
+    "walkthrough",
+    "spotlight",
+    "tooltip",
+    "accessibility",
+    "typescript",
+    "framework-agnostic"
+  ],
+  "homepage": "https://github.com/ahlgren1234/guidely#readme",
+  "bugs": "https://github.com/ahlgren1234/guidely/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ahlgren1234/guidely.git"
+  },
   "license": "MIT",
+  "author": "Peter Anyawantana",
   "type": "module",
   "sideEffects": false,
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
@@ -17,6 +36,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "prepack": "pnpm build",
     "test": "vitest run",
     "test:package": "node scripts/verify-package.mjs",
     "lint": "eslint . && prettier --check .",
