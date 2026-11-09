@@ -7,27 +7,23 @@ Lightweight guided product tours for the web. Stepr highlights any element, expl
 - **Keyboard and screen reader support** built into tours.
 - **Use the parts you need:** a complete tour, or just the spotlight or tooltip.
 
-> **Pre-release:** Stepr isn't on npm yet. Until the first release, [install from a local build](#install-from-a-local-build).
+> **Pre-release:** Stepr 0.1.0 is being prepared and isn't on npm yet.
 
 ## Install
 
-```bash
-npm install stepr
-```
-
-Stepr is an ES module and runs in current browsers. Importing it on a server is safe, but call `start()` and `show()` only in the browser.
-
-### Install from a local build
+Until the first release, install from a local build:
 
 ```bash
 git clone https://github.com/ahlgren1234/guidely.git
 cd guidely
 pnpm install
-pnpm pack # builds and writes stepr-0.0.0.tgz
+pnpm pack # builds and writes stepr-0.1.0.tgz
 
 # In your project:
-npm install /path/to/guidely/stepr-0.0.0.tgz
+npm install /path/to/guidely/stepr-0.1.0.tgz
 ```
+
+Stepr is an ES module and runs in current browsers. Importing it on a server is safe, but call `start()` and `show()` only in the browser.
 
 ## Quick start
 
@@ -259,6 +255,7 @@ Requires Node.js 24 and pnpm (version pinned in `package.json`).
 | ------------------- | ---------------------------------------- |
 | `pnpm install`      | Install dependencies                     |
 | `pnpm build`        | Compile to `dist/` with declarations     |
+| `pnpm build:pages`  | Build the GitHub Pages site in `_site/`  |
 | `pnpm test`         | Run unit tests                           |
 | `pnpm test:package` | Import the built package (after `build`) |
 | `pnpm lint`         | Run ESLint and check Prettier formatting |

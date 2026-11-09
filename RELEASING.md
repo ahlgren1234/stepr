@@ -1,18 +1,20 @@
 # Releasing
 
-`"private": true` in `package.json` makes `npm publish` fail. It stays there until the publication approval in step 7.
+`"private": true` in `package.json` makes `npm publish` fail. It stays there until the publication approval in step 6.
 
 ## Checklist
 
-1. **Name.** The package is named `stepr`. Run `npm view stepr`; a 404 means it is still unclaimed. Also run `npm search stepr` and do a basic trademark search.
+Work through these steps in order.
 
-   As of 2026-11-09 `npm view stepr` returns a 404. Nothing reserves the name until it is published.
+1. **Name.** The package is named `stepr`. Immediately before publishing, run `npm view stepr`; a 404 means it is still unclaimed. Nothing reserves the name until it is published. Also run `npm search stepr`, and search for `STEPR` in the [USPTO](https://tmsearch.uspto.gov/) and [EUIPO](https://euipo.europa.eu/eSearch/) trademark registers.
 
-2. **Version.** Follow semantic versioning, and start at `0.1.0`. While on `0.x`, breaking changes bump the minor version; features and fixes bump the patch version. Move to `1.0.0` once the API is considered stable. Set the same version in `package.json` and `VERSION` in `src/index.ts`; a unit test checks that they match.
+2. **Version.** Follow semantic versioning. The first release is `0.1.0`. While on `0.x`, breaking changes bump the minor version; features and fixes bump the patch version. Move to `1.0.0` once the API is considered stable. Set the same version in `package.json` and `VERSION` in `src/index.ts`; a unit test checks that they match.
 
-3. **Docs and repository.** Remove the pre-release notes from `README.md` and `demo/index.html`, and the local-build instructions from `README.md`. Make the repository public, because the package metadata, README and demo link to it.
+3. **Repository.** Each of these needs its own approval:
+   - **Rename, if the repository is being renamed.** Do this first, because the published package metadata and the Pages URL both contain the repository name. Update `git remote set-url origin`, the `homepage`, `bugs` and `repository` fields in `package.json`, the clone instructions in `README.md`, and the links in `demo/index.html`.
+   - **Make the repository public.** The package metadata, README and demo link to it, and those links fail for visitors while it is private. Public visibility exposes the full Git history, including commit author email addresses and all issues and pull requests.
 
-4. **Build and package.** Run these on the release commit:
+4. **Build and package.** Run these on the release candidate:
 
    ```bash
    pnpm install --frozen-lockfile
@@ -28,21 +30,69 @@
    node --input-type=module -e "import('stepr').then((m) => console.log(m.VERSION, Object.keys(m)))"
    ```
 
-5. **CI and GitGuardian.** Both checks must be green on the release commit on `main`.
+5. **Manual tests.** Complete the [smoke test](#manual-smoke-test) and the [NVDA test](#nvda-test-on-windows), which automated checks don't cover. Copy the [results](#results-to-record) into the release pull request.
 
-6. **Manual tests.** Complete the [smoke test](#manual-smoke-test), including the NVDA test, which automated checks don't cover. Record the NVDA, browser and Windows versions in the release pull request.
+6. **Publication approval.** The maintainer must explicitly approve the exact package name and version in the release pull request. Green checks are not approval.
 
-7. **Publication approval.** The maintainer must explicitly approve the exact package name and version in the release pull request. Green checks are not approval. Only after approval:
+7. **Release commit.** After approval, make one pull request that:
+   - removes `"private": true` from `package.json`
+   - removes the pre-release note and the local-build instructions from `README.md`, and adds `npm install stepr` to its Install section (this README ships in the tarball, so it must be correct before publishing)
+   - removes the pre-release pill from `demo/index.html` and changes `Once released:` to `Install:`
+
+   CI and GitGuardian must both be green on the pull request. Merge it.
+
+8. **Publish.** Publish from a clean checkout of that commit on `main`. Tag only after publishing succeeds, so that a failed publish leaves no tag.
 
    ```bash
-   # After removing "private": true in the approved release commit:
+   git switch main && git pull --ff-only && git status
+   pnpm install --frozen-lockfile
    npm login
+   npm whoami
+   npm view stepr # must still return a 404
    npm publish --dry-run
    npm publish
-   git tag vX.Y.Z && git push origin vX.Y.Z
+   git tag v0.1.0 && git push origin v0.1.0
    ```
 
-8. **After publishing.** Install the package from npm in a new project and run the [quick start](README.md#quick-start). Deploying the demo site needs its own approval.
+   npm doesn't allow a published version number to be reused, so a mistake needs a new version.
+
+9. **After publishing.** Install the package from npm in a new project and run the [quick start](README.md#quick-start). If the demo is live, [deploy it again](#deploying-the-demo) so that it shows the install command, which needs its own approval.
+
+## Deploying the demo
+
+`.github/workflows/pages.yml` deploys `demo/index.html` and the library to GitHub Pages. `pnpm build:pages` assembles the site in `_site/`, moving the page to the site root and pointing its import at `./dist/index.js`, so it works under any subpath. The workflow only runs when started by hand, so merging to `main` never deploys. Each deployment needs its own approval.
+
+The site is public, whoever can see the repository. On GitHub Free, Pages isn't available for private repositories, so complete step 3 first. The URL is `https://<owner>.github.io/<repository>/`, so renaming the repository changes it.
+
+1. Set **Settings > Pages > Build and deployment > Source** to **GitHub Actions**, or run:
+
+   ```bash
+   gh api -X POST repos/<owner>/<repository>/pages -f build_type=workflow
+   ```
+
+   GitHub creates the `github-pages` environment, which by default only accepts deployments from the default branch. The workflow requests the `pages: write` and `id-token: write` permissions itself, so no secrets are needed.
+
+2. Start the deployment and wait for it:
+
+   ```bash
+   gh workflow run pages.yml --ref main
+   gh run watch # choose the "Deploy demo" run
+   ```
+
+3. Open the URL and check that the tour, spotlight, tooltip, keyboard controls and theme switcher work, with no errors in the browser console.
+
+4. Only then add the URL to the Demo section of `README.md` and the `homepage` field of `package.json`, in a pull request.
+
+To take the site down, run `gh api -X DELETE repos/<owner>/<repository>/pages`.
+
+To preview the site locally under a subpath:
+
+```bash
+pnpm build:pages
+mkdir -p .preview && rm -rf .preview/guidely && cp -r _site .preview/guidely
+pnpm dlx serve .preview # open /guidely/
+rm -rf .preview
+```
 
 ## Manual smoke test
 
@@ -55,4 +105,46 @@ Run `pnpm build && pnpm dlx serve .` and open `/demo/smoke.html` in one current 
 5. Press Escape. The tour disappears, the page shows `onExit called`, and focus is back on **Start tour**.
 6. Start again and press Enter through to Done. The page shows `onComplete called`, and focus is back on **Start tour**.
 7. Emulate reduced motion (in Chrome DevTools: Rendering > Emulate CSS media feature `prefers-reduced-motion`), reload and start the tour. Moving between steps jumps instantly instead of scrolling smoothly.
-8. **Required before release:** with NVDA, start the tour. It announces the dialog with the title, step position and description, and each button by name. Pressing Next announces the new step.
+
+## NVDA test on Windows
+
+This test is required before release, and needs a real Windows machine with NVDA. Automated checks can't confirm what a screen reader says.
+
+**Setup**
+
+1. Install the current [NVDA](https://www.nvaccess.org/download/) and use a current version of Chrome, Edge or Firefox.
+2. Run `pnpm build && pnpm dlx serve .` and open the printed local address with `/demo/smoke.html` added, in the Windows browser. If you build in WSL, run the command there; the Windows browser can normally reach it through `localhost`.
+3. Start NVDA and open **NVDA menu > Tools > Speech Viewer**, which shows everything NVDA says as text you can copy.
+4. Close other tabs that might speak, and use only the keyboard.
+
+**Steps**
+
+The wording and order of NVDA's speech vary by browser and version. A step passes if the listed information is spoken, and fails if any of it is missing, wrong or spoken for a step that isn't showing.
+
+| #   | Do this                                     | NVDA must convey                                                                                   |
+| --- | ------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| 1   | Tab to **Start tour** and press Enter       | A dialog named "First card: Step 1 of 3", the description "Selector target.", and the Next button  |
+| 2   | Press Enter on Next                         | "Second card: Step 2 of 3. Element target, scrolled into view." Focus stays on Next                |
+| 3   | Press Enter on Next                         | "Nested card: Step 3 of 3. Inside a nested scroller." "Never shown" is never spoken                |
+| 4   | Press NVDA+Tab to read the focused button   | The button is named "Done"                                                                         |
+| 5   | Press Shift+Tab, then Enter on Back         | The "Back" button on the way, then "Second card: Step 2 of 3. Element target, scrolled into view." |
+| 6   | Press Tab twice                             | The "Next" button, then the "Close" button                                                         |
+| 7   | Press Escape                                | Focus returns to the "Start tour" button, which is spoken. The page shows `onExit called`          |
+| 8   | Start again and press Enter through to Done | Each step is spoken as above. Focus returns to "Start tour". The page shows `onComplete called`    |
+
+NVDA may switch between browse and focus mode when the dialog opens. If a key is swallowed, press NVDA+Space to change mode, and record that it happened.
+
+## Results to record
+
+Copy this into the release pull request and fill it in with what actually happened. A failure blocks the release until it is fixed or the maintainer accepts it as a known limitation in the README.
+
+```markdown
+**Smoke test** (date, browser and version, OS):
+
+- [ ] Steps 1–7 passed. Notes:
+
+**NVDA test** (date, NVDA version, browser and version, Windows version):
+
+- [ ] Steps 1–8 passed. Notes:
+- Speech Viewer output for steps 1–3:
+```
