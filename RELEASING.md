@@ -10,9 +10,7 @@ Work through these steps in order.
 
 2. **Version.** Follow semantic versioning. The first release is `0.1.0`. While on `0.x`, breaking changes bump the minor version; features and fixes bump the patch version. Move to `1.0.0` once the API is considered stable. Set the same version in `package.json` and `VERSION` in `src/index.ts`; a unit test checks that they match.
 
-3. **Repository.** Each of these needs its own approval:
-   - **Rename, if the repository is being renamed.** Do this first, because the published package metadata and the Pages URL both contain the repository name. Update `git remote set-url origin`, the `homepage`, `bugs` and `repository` fields in `package.json`, the clone instructions in `README.md`, and the links in `demo/index.html`.
-   - **Make the repository public.** The package metadata, README and demo link to it, and those links fail for visitors while it is private. Public visibility exposes the full Git history, including commit author email addresses and all issues and pull requests.
+3. **Repository.** Making the repository public needs its own approval. The package metadata, README and demo link to it, and those links fail for visitors while it is private. Public visibility exposes the full Git history, including commit author email addresses and all issues and pull requests.
 
 4. **Build and package.** Run these on the release candidate:
 
@@ -62,12 +60,12 @@ Work through these steps in order.
 
 `.github/workflows/pages.yml` deploys `demo/index.html` and the library to GitHub Pages. `pnpm build:pages` assembles the site in `_site/`, moving the page to the site root and pointing its import at `./dist/index.js`, so it works under any subpath. The workflow only runs when started by hand, so merging to `main` never deploys. Each deployment needs its own approval.
 
-The site is public, whoever can see the repository. On GitHub Free, Pages isn't available for private repositories, so complete step 3 first. The URL is `https://<owner>.github.io/<repository>/`, so renaming the repository changes it.
+The site is public, whoever can see the repository. On GitHub Free, Pages isn't available for private repositories, so complete step 3 first. The URL is `https://ahlgren1234.github.io/stepr/`.
 
 1. Set **Settings > Pages > Build and deployment > Source** to **GitHub Actions**, or run:
 
    ```bash
-   gh api -X POST repos/<owner>/<repository>/pages -f build_type=workflow
+   gh api -X POST repos/ahlgren1234/stepr/pages -f build_type=workflow
    ```
 
    GitHub creates the `github-pages` environment, which by default only accepts deployments from the default branch. The workflow requests the `pages: write` and `id-token: write` permissions itself, so no secrets are needed.
@@ -83,14 +81,14 @@ The site is public, whoever can see the repository. On GitHub Free, Pages isn't 
 
 4. Only then add the URL to the Demo section of `README.md` and the `homepage` field of `package.json`, in a pull request.
 
-To take the site down, run `gh api -X DELETE repos/<owner>/<repository>/pages`.
+To take the site down, run `gh api -X DELETE repos/ahlgren1234/stepr/pages`.
 
 To preview the site locally under a subpath:
 
 ```bash
 pnpm build:pages
-mkdir -p .preview && rm -rf .preview/guidely && cp -r _site .preview/guidely
-pnpm dlx serve .preview # open /guidely/
+mkdir -p .preview && rm -rf .preview/stepr && cp -r _site .preview/stepr
+pnpm dlx serve .preview # open /stepr/
 rm -rf .preview
 ```
 
