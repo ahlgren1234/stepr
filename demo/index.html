@@ -3,10 +3,10 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Guidely: guided product tours for the web</title>
+    <title>Stepr: guided product tours for the web</title>
     <meta
       name="description"
-      content="Guidely is a lightweight, framework-agnostic TypeScript library for guided product tours."
+      content="Stepr is a lightweight, framework-agnostic TypeScript library for guided product tours."
     />
     <meta name="color-scheme" content="light dark" />
     <style>
@@ -23,11 +23,11 @@
         --code-bg: #17201c;
         --code-ink: #e7efeb;
 
-        --guidely-tooltip-background: var(--surface);
-        --guidely-tooltip-color: var(--ink);
-        --guidely-tooltip-border-radius: 10px;
-        --guidely-tooltip-padding: 14px;
-        --guidely-tooltip-shadow:
+        --stepr-tooltip-background: var(--surface);
+        --stepr-tooltip-color: var(--ink);
+        --stepr-tooltip-border-radius: 10px;
+        --stepr-tooltip-padding: 14px;
+        --stepr-tooltip-shadow:
           0 0 0 1px var(--line), 0 12px 32px rgb(0 0 0 / 28%);
       }
       @media (prefers-color-scheme: dark) {
@@ -163,12 +163,12 @@
         gap: 0.5rem;
       }
 
-      /* Tooltip buttons, as a site using Guidely might style them. */
-      [data-guidely-tooltip] {
+      /* Tooltip buttons, as a site using Stepr might style them. */
+      [data-stepr-tooltip] {
         font-size: 0.9375rem;
         line-height: 1.45;
       }
-      [data-guidely-tooltip] button {
+      [data-stepr-tooltip] button {
         background: transparent;
         border-color: color-mix(in srgb, currentColor 40%, transparent);
         border-radius: 6px;
@@ -176,22 +176,22 @@
         font-size: 0.875rem;
         padding: 0.25rem 0.625rem;
       }
-      [data-guidely-tooltip] button:nth-last-child(2) {
-        background: var(--guidely-tooltip-color);
-        border-color: var(--guidely-tooltip-color);
-        color: var(--guidely-tooltip-background);
+      [data-stepr-tooltip] button:nth-last-child(2) {
+        background: var(--stepr-tooltip-color);
+        border-color: var(--stepr-tooltip-color);
+        color: var(--stepr-tooltip-background);
       }
-      [data-guidely-tooltip] button:disabled {
+      [data-stepr-tooltip] button:disabled {
         cursor: default;
         opacity: 0.45;
       }
-      [data-guidely-tooltip] button:focus-visible {
+      [data-stepr-tooltip] button:focus-visible {
         outline-color: currentColor;
       }
-      [data-guidely-tooltip] button:nth-last-child(2):focus-visible {
-        outline-color: var(--guidely-tooltip-color);
+      [data-stepr-tooltip] button:nth-last-child(2):focus-visible {
+        outline-color: var(--stepr-tooltip-color);
       }
-      [data-guidely-tooltip] span {
+      [data-stepr-tooltip] span {
         font-size: 0.8125rem;
       }
 
@@ -435,7 +435,7 @@
   <body>
     <header class="site-header">
       <div class="wrap">
-        <a class="brand" href="#top">Guidely</a>
+        <a class="brand" href="#top">Stepr</a>
         <nav aria-label="Sections">
           <a href="#spotlight">Spotlight</a>
           <a href="#tooltip">Tooltip</a>
@@ -453,14 +453,14 @@
           <span class="pill">Pre-release: not on npm yet</span>
           <h1>Guided product tours, without the framework.</h1>
           <p class="lede">
-            Guidely highlights any element, explains it in a tooltip and walks
+            Stepr highlights any element, explains it in a tooltip and walks
             people through your interface. It is written in TypeScript, has no
             dependencies and works with keyboards and screen readers.
           </p>
           <div class="actions">
             <button class="primary" data-start-tour>Start the tour</button>
           </div>
-          <p class="install">Once released: <code>npm install guidely</code></p>
+          <p class="install">Once released: <code>npm install stepr</code></p>
         </div>
 
         <div
@@ -699,18 +699,18 @@ tour.start();</code></pre>
       const THEMES = {
         site: {},
         midnight: {
-          '--guidely-tooltip-background': '#0f172a',
-          '--guidely-tooltip-color': '#f8fafc',
-          '--guidely-tooltip-border-radius': '16px',
-          '--guidely-tooltip-padding': '18px',
-          '--guidely-tooltip-shadow': '0 16px 40px rgb(0 0 0 / 45%)',
+          '--stepr-tooltip-background': '#0f172a',
+          '--stepr-tooltip-color': '#f8fafc',
+          '--stepr-tooltip-border-radius': '16px',
+          '--stepr-tooltip-padding': '18px',
+          '--stepr-tooltip-shadow': '0 16px 40px rgb(0 0 0 / 45%)',
         },
         paper: {
-          '--guidely-tooltip-background': '#fffbeb',
-          '--guidely-tooltip-color': '#422006',
-          '--guidely-tooltip-border-radius': '2px',
-          '--guidely-tooltip-padding': '12px',
-          '--guidely-tooltip-shadow': '0 0 0 2px #422006',
+          '--stepr-tooltip-background': '#fffbeb',
+          '--stepr-tooltip-color': '#422006',
+          '--stepr-tooltip-border-radius': '2px',
+          '--stepr-tooltip-padding': '12px',
+          '--stepr-tooltip-shadow': '0 0 0 2px #422006',
         },
       };
 

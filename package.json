@@ -1,5 +1,5 @@
 {
-  "name": "guidely",
+  "name": "stepr",
   "version": "0.0.0",
   "private": true,
   "description": "Lightweight, framework-agnostic guided product tours: spotlight, tooltip and keyboard-accessible steps.",

@@ -58,7 +58,7 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
     zIndex = 10000,
     role = 'tooltip',
   } = options;
-  const descriptionId = `guidely-tooltip-${++tooltipCount}-description`;
+  const descriptionId = `stepr-tooltip-${++tooltipCount}-description`;
 
   let target: Element | undefined;
   let tooltip: HTMLElement | undefined;
@@ -78,7 +78,7 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
 
   function mount(): void {
     tooltip = document.createElement('div');
-    tooltip.setAttribute('data-guidely-tooltip', '');
+    tooltip.setAttribute('data-stepr-tooltip', '');
     tooltip.setAttribute('role', role);
     Object.assign(tooltip.style, {
       position: 'fixed',
@@ -87,16 +87,15 @@ export function createTooltip(options: TooltipOptions = {}): Tooltip {
       boxSizing: 'border-box',
       // A fixed width keeps wrapping independent of the current position.
       width: 'max-content',
-      maxWidth: `min(var(--guidely-tooltip-max-width, 20rem), calc(100vw - ${VIEWPORT_MARGIN * 2}px))`,
+      maxWidth: `min(var(--stepr-tooltip-max-width, 20rem), calc(100vw - ${VIEWPORT_MARGIN * 2}px))`,
       maxHeight: `calc(100vh - ${VIEWPORT_MARGIN * 2}px)`,
       overflow: 'auto',
       overflowWrap: 'anywhere',
-      background: 'var(--guidely-tooltip-background, #fff)',
-      color: 'var(--guidely-tooltip-color, #111)',
-      borderRadius: 'var(--guidely-tooltip-border-radius, 8px)',
-      padding: 'var(--guidely-tooltip-padding, 12px)',
-      boxShadow:
-        'var(--guidely-tooltip-shadow, 0 4px 16px rgba(0, 0, 0, 0.25))',
+      background: 'var(--stepr-tooltip-background, #fff)',
+      color: 'var(--stepr-tooltip-color, #111)',
+      borderRadius: 'var(--stepr-tooltip-border-radius, 8px)',
+      padding: 'var(--stepr-tooltip-padding, 12px)',
+      boxShadow: 'var(--stepr-tooltip-shadow, 0 4px 16px rgba(0, 0, 0, 0.25))',
       zIndex: String(zIndex),
     });
     document.body.append(tooltip);
