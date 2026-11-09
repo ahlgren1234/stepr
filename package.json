@@ -1,6 +1,6 @@
 {
   "name": "stepr",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
   "description": "Lightweight, framework-agnostic guided product tours: spotlight, tooltip and keyboard-accessible steps.",
   "keywords": [
@@ -36,6 +36,7 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc -p tsconfig.build.json",
+    "build:pages": "pnpm build && node scripts/build-pages.mjs",
     "prepack": "pnpm build",
     "test": "vitest run",
     "test:package": "node scripts/verify-package.mjs",
