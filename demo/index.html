@@ -466,6 +466,18 @@
         width: 100%;
       }
 
+      .examples {
+        display: grid;
+        gap: 2rem;
+      }
+      .examples > * {
+        min-width: 0;
+      }
+      .code-title {
+        font-size: 1rem;
+        margin-bottom: 0.5rem;
+      }
+
       /* Footer */
       .site-footer {
         border-top: 1px solid var(--line);
@@ -492,6 +504,7 @@
           <a href="#tour">Tour</a>
           <a href="#keyboard">Keyboard</a>
           <a href="#customize">Customize</a>
+          <a href="#frameworks">React and Vue</a>
           <a href="https://github.com/ahlgren1234/stepr#readme">Docs</a>
         </nav>
       </div>
@@ -504,7 +517,9 @@
           <p class="lede">
             Stepr highlights any element, explains it in a tooltip and walks
             people through your interface. It is written in TypeScript, has no
-            dependencies and works with keyboards and screen readers.
+            runtime dependencies and is 2.8&nbsp;kB minified and gzipped. Tours
+            work with the keyboard and are marked up as dialogs for screen
+            readers.
           </p>
           <div class="actions">
             <button class="primary" data-start-tour>Start the tour</button>
@@ -587,7 +602,9 @@
               <div class="target" id="spot-a">Reports</div>
               <div class="target" id="spot-b">Billing</div>
             </div>
-            <pre tabindex="0"><code>const spotlight = createSpotlight();
+            <pre tabindex="0"><code>import { createSpotlight } from 'stepr';
+
+const spotlight = createSpotlight();
 
 spotlight.show('#reports'); // false if there's no such element
 spotlight.destroy();</code></pre>
@@ -637,7 +654,9 @@ spotlight.destroy();</code></pre>
             </div>
             <output id="tour-result"></output>
           </div>
-          <pre tabindex="0"><code>const tour = createTour({
+          <pre tabindex="0"><code>import { createTour } from 'stepr';
+
+const tour = createTour({
   steps: [
     {
       target: '#app-new',
@@ -651,8 +670,8 @@ spotlight.destroy();</code></pre>
     },
     // ...
   ],
-  onComplete: () =&gt; log('onComplete called'),
-  onExit: () =&gt; log('onExit called'),
+  onComplete: () =&gt; console.log('onComplete called'),
+  onExit: () =&gt; console.log('onExit called'),
 });
 
 tour.start();</code></pre>
@@ -753,6 +772,79 @@ tour.start();</code></pre>
               <div class="target" id="custom-target">Settings</div>
             </div>
             <pre tabindex="0"><code id="custom-code"></code></pre>
+          </div>
+        </div>
+      </section>
+      <section class="section" id="frameworks">
+        <div class="wrap">
+          <div class="copy">
+            <h2>React and Vue</h2>
+            <p>
+              Stepr has no framework bindings; use the same API from a
+              component. Create the tour once, start it from an event handler
+              and call <code>destroy()</code> when the component unmounts.
+            </p>
+          </div>
+          <div class="examples">
+            <div>
+              <h3 class="code-title">React</h3>
+              <pre
+                tabindex="0"
+                data-example="tsx"
+              ><code>import { useEffect, useRef } from 'react';
+import { createTour, type Tour } from 'stepr';
+
+export function TourButton() {
+  const tour = useRef&lt;Tour | null&gt;(null);
+
+  useEffect(() =&gt; {
+    const instance = createTour({
+      steps: [
+        { target: '#save', title: 'Save', description: 'Keeps your changes.' },
+        { target: '#share', title: 'Share', description: 'Invites your team.' },
+      ],
+      onComplete: () =&gt; console.log('Finished'),
+      onExit: () =&gt; console.log('Closed early'),
+    });
+    tour.current = instance;
+    return () =&gt; {
+      instance.destroy();
+      tour.current = null;
+    };
+  }, []);
+
+  return (
+    &lt;button type="button" onClick={() =&gt; tour.current?.start()}&gt;
+      Take the tour
+    &lt;/button&gt;
+  );
+}</code></pre>
+            </div>
+            <div>
+              <h3 class="code-title">Vue</h3>
+              <pre
+                tabindex="0"
+                data-example="vue"
+              ><code>&lt;script setup lang="ts"&gt;
+import { onBeforeUnmount } from 'vue';
+import { createTour } from 'stepr';
+
+const tour = createTour({
+  steps: [
+    { target: '#save', title: 'Save', description: 'Keeps your changes.' },
+    { target: '#share', title: 'Share', description: 'Invites your team.' },
+  ],
+  onComplete: () =&gt; console.log('Finished'),
+  onExit: () =&gt; console.log('Closed early'),
+});
+
+onBeforeUnmount(() =&gt; tour.destroy());
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;button type="button" @click="tour.start()"&gt;Take the tour&lt;/button&gt;
+&lt;/template&gt;</code></pre>
+            </div>
           </div>
         </div>
       </section>
@@ -868,6 +960,7 @@ tour.start();</code></pre>
       // Tooltip
       const showTooltipCode = (placement) => {
         $('#tooltip-code').textContent =
+          `import { createTooltip } from 'stepr';\n\n` +
           `const tooltip = createTooltip({ placement: '${placement}' });\n\n` +
           `tooltip.show('#export', {\n` +
           `  title: 'Export',\n` +
