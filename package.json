@@ -39,6 +39,7 @@
     "prepack": "pnpm build",
     "test": "vitest run",
     "test:package": "node scripts/verify-package.mjs",
+    "size": "node scripts/measure-size.mjs",
     "lint": "eslint . && prettier --check .",
     "format": "prettier --write .",
     "typecheck": "tsc --noEmit"
